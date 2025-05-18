@@ -4,16 +4,20 @@ import StoreFrontIcon from "@mui/icons-material/Store";
 import RepNavbar from "../../components/RepNavbar/RepNavbar";
 import RepSidebar from "../../components/Sidebar/RepSidebar/RepSidebar";
 import api from "../../api/axios";
-import CircularProgress from "@mui/material/CircularProgress";
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import TextField from "@mui/material/TextField";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
+import {
+  CircularProgress,
+  Alert,
+  Button,
+  TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Snackbar
+} from "@mui/material";
 
 const RepShops = () => {
+  // Main state
   const [shops, setShops] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -30,8 +34,15 @@ const RepShops = () => {
   const [editIndex, setEditIndex] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Alert state
+  const [alert, setAlert] = useState({
+    open: false,
+    message: "",
+    severity: "success"
+  });
 
-  // Fetch shops from backend
+  // Fetch shops on component mount
   useEffect(() => {
     const fetchShops = async () => {
       try {
@@ -41,6 +52,7 @@ const RepShops = () => {
       } catch (error) {
         handleApiError(error);
         setError("Failed to load shops. Please try again.");
+        showAlert("Failed to load shops", "error");
       } finally {
         setLoading(false);
       }
@@ -49,19 +61,34 @@ const RepShops = () => {
     fetchShops();
   }, []);
 
+  // Alert helpers
+  const showAlert = (message, severity = "success") => {
+    setAlert({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  const handleCloseAlert = () => {
+    setAlert(prev => ({ ...prev, open: false }));
+  };
+
+  // Error handler
   const handleApiError = (error) => {
     console.error("API Error:", error);
     if (error.response?.status === 401) {
-      alert("Session expired. Please login again.");
+      showAlert("Session expired. Please login again.", "error");
       window.location.href = '/login';
       return true;
     }
     return false;
   };
 
+  // CRUD Operations
   const handleAddShop = async () => {
     if (!newShop.shop_name || !newShop.location || !newShop.contact) {
-      alert("Please fill all fields");
+      showAlert("Please fill all fields", "error");
       return;
     }
 
@@ -70,28 +97,29 @@ const RepShops = () => {
       setShops([...shops, response.data.shop]);
       setNewShop({ shop_name: "", location: "", contact: "" });
       setShowAddModal(false);
+      showAlert("Shop added successfully!");
     } catch (error) {
       if (!handleApiError(error)) {
-        alert(error.response?.data?.message || "Failed to add shop");
+        showAlert(error.response?.data?.message || "Failed to add shop", "error");
       }
     }
   };
 
-  const handleEditClick = (index) => {
+  const handleEditClick = (shop, index) => {
     setEditIndex(index);
-    setEditShop({ ...shops[index] });
+    setEditShop({ ...shop });
     setShowEditModal(true);
   };
 
   const handleEditShop = async () => {
     if (!editShop.shop_name || !editShop.location || !editShop.contact) {
-      alert("Please fill all fields");
+      showAlert("Please fill all fields", "error");
       return;
     }
 
     try {
       const response = await api.put(
-        `/shops/${shops[editIndex].id}`,
+        `/shops/${editShop.id}`,
         editShop
       );
 
@@ -99,9 +127,10 @@ const RepShops = () => {
       updatedShops[editIndex] = response.data.shop;
       setShops(updatedShops);
       setShowEditModal(false);
+      showAlert("Shop updated successfully!");
     } catch (error) {
       if (!handleApiError(error)) {
-        alert(error.response?.data?.message || "Failed to update shop");
+        showAlert(error.response?.data?.message || "Failed to update shop", "error");
       }
     }
   };
@@ -112,9 +141,10 @@ const RepShops = () => {
     try {
       await api.delete(`/shops/${id}`);
       setShops(shops.filter(shop => shop.id !== id));
+      showAlert("Shop deleted successfully!");
     } catch (error) {
       if (!handleApiError(error)) {
-        alert("Failed to delete shop");
+        showAlert("Failed to delete shop", "error");
       }
     }
   };
@@ -131,6 +161,7 @@ const RepShops = () => {
               variant="contained" 
               color="primary"
               onClick={() => setShowAddModal(true)}
+              startIcon={<StoreFrontIcon />}
             >
               Add New Shop
             </Button>
@@ -138,17 +169,32 @@ const RepShops = () => {
 
           {loading ? (
             <div className="LoadingState">
-              <CircularProgress />
+              <CircularProgress size={60} />
               <p>Loading shops...</p>
             </div>
           ) : error ? (
-            <Alert severity="error" className="ErrorState">
-              {error}
-              <Button onClick={() => window.location.reload()}>Retry</Button>
-            </Alert>
+            <div className="ErrorState">
+              <Alert severity="error">
+                {error}
+                <Button 
+                  color="inherit" 
+                  size="small"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </Button>
+              </Alert>
+            </div>
           ) : shops.length === 0 ? (
             <div className="EmptyState">
+              <StoreFrontIcon style={{ fontSize: 60, color: "#ccc" }} />
               <p>No shops found</p>
+              <Button 
+                variant="outlined"
+                onClick={() => setShowAddModal(true)}
+              >
+                Add Your First Shop
+              </Button>
             </div>
           ) : (
             <div className="ShopsGrid">
@@ -171,9 +217,9 @@ const RepShops = () => {
                       Delete
                     </Button>
                     <Button 
-                      variant="outlined" 
+                      variant="contained" 
                       color="primary"
-                      onClick={() => handleEditClick(index)}
+                      onClick={() => handleEditClick(shop, index)}
                     >
                       Edit
                     </Button>
@@ -186,80 +232,126 @@ const RepShops = () => {
       </div>
 
       {/* Add Shop Modal */}
-      <Dialog open={showAddModal} onClose={() => setShowAddModal(false)}>
-        <DialogTitle>Add New Shop</DialogTitle>
+      <Dialog 
+        open={showAddModal} 
+        onClose={() => setShowAddModal(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          <StoreFrontIcon style={{ verticalAlign: 'middle', marginRight: 10 }} />
+          Add New Shop
+        </DialogTitle>
         <DialogContent>
-          <div className="ModalContent">
-            <StoreFrontIcon className="ModalIcon" />
-            <div className="ModalInputs">
-              <TextField
-                autoFocus
-                margin="dense"
-                label="Shop Name"
-                fullWidth
-                value={newShop.shop_name}
-                onChange={(e) => setNewShop({ ...newShop, shop_name: e.target.value })}
-              />
-              <TextField
-                margin="dense"
-                label="Location"
-                fullWidth
-                value={newShop.location}
-                onChange={(e) => setNewShop({ ...newShop, location: e.target.value })}
-              />
-              <TextField
-                margin="dense"
-                label="Contact Number"
-                fullWidth
-                value={newShop.contact}
-                onChange={(e) => setNewShop({ ...newShop, contact: e.target.value })}
-              />
-            </div>
+          <div className="ModalInputs">
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Shop Name"
+              fullWidth
+              variant="outlined"
+              value={newShop.shop_name}
+              onChange={(e) => setNewShop({ ...newShop, shop_name: e.target.value })}
+            />
+            <TextField
+              margin="dense"
+              label="Location"
+              fullWidth
+              variant="outlined"
+              value={newShop.location}
+              onChange={(e) => setNewShop({ ...newShop, location: e.target.value })}
+            />
+            <TextField
+              margin="dense"
+              label="Contact Number"
+              fullWidth
+              variant="outlined"
+              value={newShop.contact}
+              onChange={(e) => setNewShop({ ...newShop, contact: e.target.value })}
+            />
           </div>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowAddModal(false)}>Cancel</Button>
-          <Button onClick={handleAddShop} color="primary">Save</Button>
+          <Button 
+            onClick={handleAddShop} 
+            color="primary"
+            variant="contained"
+          >
+            Save Shop
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit Shop Modal */}
-      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
-        <DialogTitle>Edit Shop</DialogTitle>
+      <Dialog 
+        open={showEditModal} 
+        onClose={() => setShowEditModal(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          <StoreFrontIcon style={{ verticalAlign: 'middle', marginRight: 10 }} />
+          Edit Shop
+        </DialogTitle>
         <DialogContent>
-          <div className="ModalContent">
-            <StoreFrontIcon className="ModalIcon" />
-            <div className="ModalInputs">
-              <TextField
-                autoFocus
-                margin="dense"
-                label="Shop Name"
-                fullWidth
-                value={editShop.shop_name}
-                onChange={(e) => setEditShop({ ...editShop, shop_name: e.target.value })}
-              />
-              <TextField
-                margin="dense"
-                label="Location"
-                fullWidth
-                value={editShop.location}
-                onChange={(e) => setEditShop({ ...editShop, location: e.target.value })}
-              />
-              <TextField
-                margin="dense"
-                label="Contact Number"
-                fullWidth
-                value={editShop.contact}
-                onChange={(e) => setEditShop({ ...editShop, contact: e.target.value })}
-              />
-            </div>
+          <div className="ModalInputs">
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Shop Name"
+              fullWidth
+              variant="outlined"
+              value={editShop.shop_name}
+              onChange={(e) => setEditShop({ ...editShop, shop_name: e.target.value })}
+            />
+            <TextField
+              margin="dense"
+              label="Location"
+              fullWidth
+              variant="outlined"
+              value={editShop.location}
+              onChange={(e) => setEditShop({ ...editShop, location: e.target.value })}
+            />
+            <TextField
+              margin="dense"
+              label="Contact Number"
+              fullWidth
+              variant="outlined"
+              value={editShop.contact}
+              onChange={(e) => setEditShop({ ...editShop, contact: e.target.value })}
+            />
           </div>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowEditModal(false)}>Cancel</Button>
-          <Button onClick={handleEditShop} color="primary">Update</Button>
+          <Button 
+            onClick={handleEditShop} 
+            color="primary"
+            variant="contained"
+          >
+            Update Shop
+          </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Global Alert */}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseAlert} 
+          severity={alert.severity}
+          sx={{ width: '100%' }}
+          elevation={6}
+          variant="filled"
+        >
+          {alert.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
