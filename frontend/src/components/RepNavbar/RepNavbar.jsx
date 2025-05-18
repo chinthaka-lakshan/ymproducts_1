@@ -3,7 +3,7 @@ import "./RepNavbar.css";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axios"; // Import your centralized axios instance
 
 const RepNavbar = ({ onMenuClick }) => {
   const [showLogout, setShowLogout] = useState(false);
@@ -15,12 +15,18 @@ const RepNavbar = ({ onMenuClick }) => {
   useEffect(() => {
     const storedRep = localStorage.getItem("admin_user");
     if (storedRep) {
-      const repData = JSON.parse(storedRep);
-      setRepName(repData.name || "Sales Rep");
+      try {
+        const repData = JSON.parse(storedRep);
+        setRepName(repData.name || "Sales Rep");
+      } catch (error) {
+        console.error("Error parsing admin_user data:", error);
+        setRepName("Sales Rep");
+      }
     }
   }, []);
 
-  const toggleLogoutPopup = () => {
+  const toggleLogoutPopup = (e) => {
+    e.stopPropagation(); // Prevent event bubbling
     setShowLogout((prev) => !prev);
   };
 
@@ -28,12 +34,7 @@ const RepNavbar = ({ onMenuClick }) => {
     try {
       const token = localStorage.getItem("admin_token");
       if (token) {
-        await axios.post("http://localhost:8000/api/rep/logout", {}, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        });
+        await api.post("/logout"); // Using the centralized api instance
       }
     } catch (error) {
       console.error("Logout error:", error);
@@ -43,9 +44,9 @@ const RepNavbar = ({ onMenuClick }) => {
       localStorage.removeItem("admin_user");
       localStorage.removeItem("username");
       
-      // Redirect to login page and refresh
-      navigate("/");
-      window.location.reload();
+      // Redirect to login page
+      navigate("/"); // Consider using a specific login route
+      // Avoid using window.location.reload() as it's better to let React handle the navigation
     }
   };
 
@@ -56,25 +57,31 @@ const RepNavbar = ({ onMenuClick }) => {
       }
     };
 
+    const handleEscapeKey = (event) => {
+      if (event.key === "Escape") {
+        setShowLogout(false);
+      }
+    };
+
     if (showLogout) {
       document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscapeKey);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscapeKey);
     };
   }, [showLogout]);
 
   return (
     <div className="RepNavbar">
       <div className="RepNavbarContainer">
-        <div className="HamburgerIcon" onClick={onMenuClick}>
+        <div className="HamburgerIcon" onClick={onMenuClick} aria-label="Toggle menu">
           <MenuIcon />
         </div>
         <span className="RepNavbarTitle">SALES REP DASHBOARD</span>
-        <div className="RepNavbarLog" onClick={toggleLogoutPopup}>
+        <div className="RepNavbarLog" onClick={toggleLogoutPopup} role="button" tabIndex={0}>
           <span>{repName}</span>
           <AccountCircleIcon className="RepProfileIcon" />
         </div>
@@ -84,12 +91,21 @@ const RepNavbar = ({ onMenuClick }) => {
         <div className="RepLogoutPopup">
           <div className="RepPopupContent" ref={popupRef}>
             <p>Are you sure you want to log out?</p>
-            <button className="RepPopupLogoutButton" onClick={handleLogout}>
-              Logout
-            </button>
-            <button className="RepPopupCancelButton" onClick={toggleLogoutPopup}>
-              Cancel
-            </button>
+            <div className="RepPopupButtons">
+              <button 
+                className="RepPopupLogoutButton" 
+                onClick={handleLogout}
+                autoFocus // Focus the logout button by default for better keyboard navigation
+              >
+                Logout
+              </button>
+              <button 
+                className="RepPopupCancelButton" 
+                onClick={toggleLogoutPopup}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
