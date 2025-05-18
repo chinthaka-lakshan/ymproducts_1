@@ -72,3 +72,79 @@
         }
     }
 }
+
+.ModalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.Modal {
+  background-color: #fff;
+  padding: 40px;
+  border-radius: 20px;
+  width: 800px;
+  max-width: 90%;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.Modal h2 {
+  font-size: 38px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.Modal input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 24px;
+  background-color: #fff;
+  color: #333;
+  box-sizing: border-box;
+}
+
+.modalbutton {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.CancelButton {
+  background-color: #ff4500;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.saveButton {
+  background-color: #1c1c1c;
+  color: white;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.CancelButton:hover {
+  background-color: #e03e00;
+}
+
+.saveButton:hover {
+  background-color: #333;
+}
