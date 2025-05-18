@@ -10,6 +10,7 @@ use App\Http\Controllers\PurchaseStockController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReturnController;
+use App\Http\Controllers\CashflowController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -45,6 +46,11 @@ Route::put('/shops/{shop}/return-balance', [ShopController::class, 'updateReturn
 Route::get('/shops/{shop}/return-balance', [ReturnController::class, 'getShopReturnBalance']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/cashflows', [CashflowController::class, 'index']);
+    Route::post('/cashflows', [CashflowController::class, 'store']);
+    Route::get('/cashflows/{id}', [CashflowController::class, 'show']);
+
+
     Route::get('/me', [AuthController::class, 'me']);
     Route::apiResource('shops', ShopController::class);
     Route::get('/auth/verify', function () {
