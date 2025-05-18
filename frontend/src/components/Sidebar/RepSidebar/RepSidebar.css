@@ -1,0 +1,126 @@
+.RepSidebar {
+    flex: none;
+    width: 16%;
+    height: 100vh;
+    background-color: #2c3e50;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    
+    .Top {
+        display: flex;
+        height: 180px;
+        align-items: center;
+        justify-content: center;
+        background-color: darkslategray;
+
+        .Logo {
+            max-height: 100%;
+            width: auto;
+        }
+    }
+
+    .Bottom {
+        background-color: #2c3e50;
+
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+
+            li {
+                display: flex;
+                align-items: center;
+                padding: 15px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+
+                &:hover {
+                    background-color: #34495e;
+                }
+
+                .Icon {
+                    font-size: 25px;
+                    color: white;
+                }
+
+                span {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: white;
+                    margin-left: 20px;
+                    display: inline;
+                }
+            }
+
+            li.active {
+                background-color: #3498db;
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .RepSidebar {
+        width: 60px;
+    }
+
+    .RepSidebar .Top {
+        height: 75px;
+    }
+
+    .RepSidebar .Top .Logo {
+        max-width: 50px;
+        height: auto;
+    }
+
+    .RepSidebar .Bottom ul li span {
+        display: none;
+    }
+
+    .RepSidebar.open {
+        width: 50%;
+        transform: translateX(0);
+        opacity: 80%;
+    }
+
+    .RepSidebar.open .Top {
+        height: 75px;
+    }
+
+    .RepSidebar.open .Top .Logo {
+        max-width: 70px;
+        height: auto;
+    }
+
+    .RepSidebar.open .Bottom ul li span {
+        font-size: 25px;
+        display: inline;
+    }
+}
+
+@media (max-width: 480px) {
+    .RepSidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        z-index: 1500;
+        width: 50%;
+    }
+
+    .RepSidebar.open {
+        transform: translateX(0);
+        opacity: 80%;
+    }
+
+    .RepSidebar.open .Top .Logo {
+        max-width: 70px;
+        height: auto;
+    }
+
+    .RepSidebar.open .Bottom ul li span {
+        font-size: 15px;
+        display: inline;
+    }
+}

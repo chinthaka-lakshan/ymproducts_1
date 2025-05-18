@@ -1,0 +1,38 @@
+.DashboardWidget{
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    -webkit-box-shadow: 1px 1px 5px 1px #425060;
+    box-shadow: 1px 1px 5px 1px #a0afc1;
+    border-radius: 5px;
+    height: 100px;
+    width: 212px;
+    background-color: #fff;
+    align-items: center;
+    justify-content: space-between;
+
+    .DashboardWidgetLeft, .DashboardWidgetRight{
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+
+        .DashboardWidgetTitle{
+            font-weight: bold;
+            font-size: 16px;
+            color: #425060;
+            align-self: flex-start;
+        }
+
+        .icon{
+            font-size: 40px;
+            padding: 5px;
+            align-self: flex-end;
+        }
+
+        span{
+            font-size: 10px;
+            cursor: pointer;
+            color: darkgreen;
+        }
+    }
+}

@@ -1,0 +1,129 @@
+.OrderHistory{
+  font-family: Arial, sans-serif;
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+
+  .OrderHistoryContainer{
+    display: flex;
+    flex-direction: column;
+    width: 84%;
+    background: #f4f4f4;
+    gap: 10px;
+    padding: 20px;
+    margin-top: 75px;
+    margin-left: 16%;
+    height: calc(100vh - 75px);
+
+    .orderHistorytitle{
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+}
+
+.orderHistorytitle h1{
+    position:absolute;
+    top: 12%;
+    left:20%;
+}
+
+.order-tablecontainerh {
+  position: absolute;
+  top: 25%;
+  left: 20%;
+}
+  
+  .order-table-h {
+    border-collapse: collapse;
+    border: 1px solid #e1e6f0;
+    border-radius: 8px;
+    background-color: white;
+  }
+  
+  .order-table-h th {
+    padding: 5px 15px;
+    color: #141414;
+    font-weight: normal;
+    border-bottom: 1px solid #e1e6f0;
+    width: 200px;
+    height: 45px;
+    background-color:whitesmoke;
+
+  }
+  
+  .order-table-h td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f1f5;
+  }
+  
+  .view-btn1 {
+    background-color: #3f72af;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 75px;
+  }
+  
+  .view-btn:hover {
+    background-color: #305a8b;
+  }
+  
+  /* Pagination styles */
+  .pagination-container-h {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 20px;
+    gap: 5px;
+  }
+  
+  .pagination-arrow-h,
+  .pagination-number-h,
+  .pagination-ellipsis-h {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 30px;
+    border: 1px solid #dee2e6;
+    background-color: white;
+    color: #6c757d;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .pagination-number-h.active {
+    background-color: #6042ff;
+    color: white;
+    border-color: #6042ff;
+  }
+  
+  .pagination-arrow-h:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .pagination-ellipsis-h {
+    cursor: default;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .order-table-container-h {
+      padding: 10px;
+    }
+    
+    .pagination-container-h {
+      justify-content: center;
+    }
+  }

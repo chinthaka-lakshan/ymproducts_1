@@ -1,0 +1,166 @@
+.RepNavbar {
+    height: 75px;
+    display: flex;
+    align-items: center;
+    background-color: darkcyan;
+    padding: 0 20px;
+    position: fixed;
+    top: 0;
+    left: 16%;
+    width: 84%;
+    z-index: 999;
+
+    .RepNavbarContainer {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        padding-right: 30px;
+
+        .RepNavbarTitle {
+            font-size: 30px;
+            font-weight: bold;
+            color: #333;
+            flex: 1;
+            text-align: center;
+        }
+
+        .RepNavbarLog {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            flex-shrink: 0;
+
+            span {
+                font-size: 20px;
+                font-weight: bold;
+                color: #333;
+            }
+
+            .RepProfileIcon {
+                font-size: 45px;
+                color: #333;
+                cursor: pointer;
+            }
+        }
+    }
+
+    .RepLogoutPopup {
+        position: absolute;
+        top: 100%;
+        right: 50px;
+        width: 10%;
+        height: 170px;
+        background: #a0afc1;
+        padding: 10px;
+        border-radius: 10px;
+        -webkit-box-shadow: 1px 1px 5px 1px #425060;
+        box-shadow: 1px 1px 5px 1px #a0afc1;
+        justify-content: center;
+        align-items: center;
+
+        .RepPopupContent {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            justify-content: center;
+            align-items: center;
+
+            p {
+                color: black;
+                font-size: 16px;
+                font-weight: bold;
+            }
+
+            .RepPopupLogoutButton {
+                width: 80%;
+                background: darkred;
+                color: white;
+                padding: 5px;
+                border: none;
+                cursor: pointer;
+            }
+
+            .RepPopupCancelButton {
+                width: 80%;
+                background: gray;
+                color: white;
+                padding: 5px;
+                border: none;
+                cursor: pointer;
+            }
+        }
+    }
+}
+
+.HamburgerIcon {
+    display: none;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .RepNavbar {
+        left: 60px;
+        width: calc(100% - 60px);
+    }
+
+    .HamburgerIcon {
+        display: block;
+    }
+
+    .RepNavbarTitle {
+        font-size: 30px !important;
+    }
+
+    .RepNavbarLog {
+        gap: 3px !important;
+    }
+
+    .RepLogoutPopup {
+        width: 20% !important;
+    }
+    
+    .RepLogoutPopup .RepPopupContent p {
+        font-size: 15px !important;
+    }
+
+    .RepLogoutPopup .RepPopupContent .RepPopupLogoutButton, .RepPopupCancelButton {
+        height: 32px;
+        font-size: 15px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .RepNavbar {
+        left: 0;
+        width: 100%;
+    }
+
+    .HamburgerIcon {
+        display: block;
+    }
+
+    .RepNavbarTitle {
+        font-size: 18px !important;
+    }
+
+    .RepNavbarLog {
+        gap: 2px !important;
+    }
+
+    .RepNavbarLog span {
+        font-size: 10px !important;
+    }
+
+    .RepNavbarLog .RepProfileIcon {
+        font-size: 25px !important;
+    }
+
+    .RepLogoutPopup .RepPopupContent p {
+        font-size: 12px !important;
+    }
+}

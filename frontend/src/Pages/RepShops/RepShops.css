@@ -1,0 +1,249 @@
+.Shops {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+
+    .ShopsContainer {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+
+        .ShopCardsContainer {
+            display: flex;
+            flex-direction: column;
+            background: #f4f4f4;
+            gap: 10px;
+            padding: 20px;
+            margin-top: 5%;
+            margin-left: 16%;
+            height: calc(100vh - 75px);
+            overflow-x: hidden;
+            overflow-y: scroll;
+            align-items: center;
+
+            .ShopsTop {
+                display: flex;
+                flex-direction: row;
+                width: 100%;
+                align-items: center;
+                justify-content: space-between;
+
+                h1 {
+                    font-size: 28px;
+                    color: #616161;
+                    align-self: flex-start;
+                }
+
+                .AddButton {
+                    background: green;
+                    color: white;
+                    padding: 10px;
+                    border: none;
+                    cursor: pointer;
+                    border-radius: 5px;
+                    align-self: flex-end;
+                }
+                
+                .AddButton:hover {
+                    background: darkgreen;
+                    transform: scale(1.05);
+                }
+            }
+
+            .ShopsGrid {
+                display: grid;
+                width: 100%;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+                padding: 10px;
+
+                .ShopCard {
+                    display: flex;
+                    flex-direction: column;
+                    width: 88%;
+                    height: 80%;
+                    align-items: center;
+                    justify-content: space-between;
+                    background:#b7adad;
+                    padding: 15px;
+                    border-radius: 15px;
+                    -webkit-box-shadow: 1px 1px 5px 1px #425060;
+                    box-shadow: 1px 1px 5px 1px #a0afc1;
+                    gap: 10px;
+                    border-right: 4px solid #826c6cd1;
+                    border-bottom: 4px solid #826c6cd1;
+
+                    h2 {
+                        font-size: 18px;
+                        color: #000;
+                    }
+
+                    .ShopCardMiddle {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 15px;
+
+                        .ShopCardIcon {
+                            font-size: 60px;
+                            color: #000;
+                        }
+
+                        .ShopCardDetails {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 5px;
+                            font-size: 15px;
+                            color: #000;
+                        }
+                    }
+
+                    .ShopCardButtons {
+                        display: flex;
+                        gap: 15px;
+
+                        .DeleteButton, .EditButton {
+                            border: none;
+                            cursor: pointer;
+                            border-radius: 5px;
+                            padding: 5px 10px;
+                            font-size: 15px;
+                            color: white;
+                        }
+                        
+                        .DeleteButton {
+                            background: #b71c1c;
+                        }
+                        
+                        .DeleteButton:hover {
+                            background: #e53935;
+                            transform: scale(1.05);
+                        }
+                        
+                        .EditButton {
+                            background: #8d6e63;
+                        }
+                        
+                        .EditButton:hover {
+                            background: #6d4c41;
+                            transform: scale(1.05);
+                        }                        
+                    }
+                }
+
+                .ShopCard:hover {
+                    transform: scale(1.05);
+                    box-shadow: 6px 10px 20px rgba(0, 0, 0, 0.12);
+                    border-right: 6px solid #826c6cd1;
+                    border-bottom: 6px solid #826c6cd1;
+                }
+            }
+        }
+    }
+
+    .ModalBackdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .Modal {
+            display: flex;
+            flex-direction: column;
+            width: 60%;
+            height: 70%;
+            background: whitesmoke;
+            border-radius: 20px;
+            -webkit-box-shadow: 1px 1px 5px 1px #425060;
+            box-shadow: 4px 6px 20px rgba(0, 0, 0, 0.15);
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            gap: 30px;
+
+            h2 {
+                font-size: 35px;
+                color: #616161;
+                margin-top: -20px;
+            }
+
+            .ModalMiddle {
+                display: flex;
+                flex-direction: row;
+                gap: 40px;
+                width: 90%;
+
+                .ModalIcon {
+                    font-size: 250px;
+                    color: #000;
+                    align-self: flex-start;
+                }
+
+                .ModalInputs {
+                    display: flex;
+                    flex-direction: column;
+                    width: 70%;
+                    gap: 40px;
+
+                    input {
+                        font-size: 25px;
+                        padding: 10px;
+                        border-radius: 10px;
+                        color: white;
+                        background-color: #000
+                    }
+                }
+            }
+
+            .ModalButtons {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 40px;
+                font-size: 20px;
+
+                .CancelButton {
+                    background: orangered;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-weight: bold;
+                }
+
+                .CancelButton:hover {
+                    transform: scale(1.05);
+                    background: orange;
+                }
+
+                .SaveButton {
+                    background: peru;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-weight: bold;
+                }
+
+                .SaveButton:hover {
+                    transform: scale(1.05);
+                    background: green;
+                }
+            }
+        }
+    }
+}

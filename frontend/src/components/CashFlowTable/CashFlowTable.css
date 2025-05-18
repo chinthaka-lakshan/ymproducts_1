@@ -1,0 +1,18 @@
+.CashFlowTable {
+    align-items: center;
+    justify-content: center;
+    -webkit-box-shadow: 1px 1px 5px 1px #425060;
+    box-shadow: 1px 1px 5px 1px #a0afc1;
+    border-radius: 5px;
+    width: 80%;
+
+    .CashFlowTableTitle {
+        font-size: 20px;
+        color: #616161;
+    }
+
+    .Datagrid{
+        color: #616161;
+        border: none;
+    }
+}

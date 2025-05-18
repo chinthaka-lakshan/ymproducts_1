@@ -1,0 +1,60 @@
+.AdminSidebar {
+    flex: none;
+    width: 16%;
+    height: 100vh;
+    background-color: #2c3e50;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+
+    .Top{
+        display: flex;
+        height: 180px;
+        align-items: center;
+        justify-content: center;
+        background-color: darkslategray;
+
+        .Logo{
+            height: 200px;
+            width: 200px;
+        }
+    }
+
+    .Bottom{
+        background-color: #2c3e50;
+
+        ul{
+            list-style: none;
+            margin: 0;
+            padding: 0;
+
+            li{
+                display: flex;
+                align-items: center;
+                padding: 15px;
+                cursor: pointer;
+
+                &:hover{
+                    background-color: #34495e;
+                }
+
+                .Icon{
+                    font-size: 25px;
+                    color: white;
+                }
+
+                span{
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: white;
+                    margin-left: 20px;
+                }
+            }
+
+            li.active {
+                background-color: #3498db;
+            }
+        }
+    }
+}

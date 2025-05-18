@@ -1,0 +1,242 @@
+.RepOrders {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+
+  .RepOrdersContainer {
+    display: flex;
+    flex-direction: column;
+    margin-left: 16%;
+    width: calc(100% - 16%);
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+
+    .RepOrdersTableContainer {
+      display: flex;
+      flex-direction: column;
+      background: #f4f4f4;
+      gap: 10px;
+      padding: 20px;
+      width: 97%;
+      height: calc(100vh - 150px);
+      align-items: center;
+      justify-content: flex-start;
+
+      .RepOrdersTableTop {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        
+        h1 {
+          font-size: 28px;
+          color: #616161;
+          align-self: flex-start;
+        }
+      }
+
+      .RepOrdersTable {
+        display: flex;
+        flex-direction: column;
+        width: 97%;
+        background: #ffffff;
+        border-radius: 10px;
+        -webkit-box-shadow: 1px 1px 5px 1px #425060;
+        box-shadow: 1px 1px 5px 1px #a0afc1;
+        padding: 20px;
+        gap: 20px;
+        align-items: center;
+        justify-content: flex-start;
+        
+        th {
+          text-align: center;
+          padding: 10px 4px;
+          font-weight: bold;
+          font-size: 16px;
+          background-color: #333;
+          color: #f4f4f4;
+        }
+
+        td {
+          padding: 10px 2px;
+          font-size: 14px;
+          color: #000;
+
+          .OrderTableViewButton {
+            background-color: green;
+            color: #f4f4f4;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.3 ease;
+
+            &:hover {
+              transform: scale(1.05);
+              background-color: darkgreen;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.RepOrdersSearchContainer {
+  position: relative;
+  width: 70%;
+  align-items: center;
+  justify-content: center;
+}
+
+.RepOrdersSearchInput {
+  width: 70%;
+  padding: 10px 36px 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.RepOrdersSearchIcon {
+  position: absolute;
+  right: 110px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+}
+
+.RepOrdersTableScroll {
+  width: 100%;
+  overflow-y: auto;
+  max-height: 380px;
+}
+
+.pagination-container-rep {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+
+  .pagination-arrow-rep,
+  .pagination-number-rep {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #e0c7c7;
+    cursor: pointer;
+    font-size: 18px;
+
+    &.active {
+      background-color: #1976d2;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    &:hover:not(:disabled):not(.active) {
+      background-color: #e0c7c7;
+    }
+  }
+
+  .pagination-ellipsis-rep {
+    padding: 6px 8px;
+    font-size: 18px;
+    color: #555;
+    background: transparent;
+    border: none;
+    cursor: default;
+  }
+}
+
+@media (max-width: 768px) {
+  .RepOrdersContainer {
+    margin-left: 60px !important;
+    width: calc(100% - 60px) !important;
+  }
+
+  .RepOrdersTableContainer {
+    width: 94% !important;
+  }
+
+  .RepOrdersSearchIcon {
+    right: 50px;
+  }
+
+  .RepOrdersTableScroll {
+    max-height: 650px !important;
+  }
+
+  .RepOrdersTable th.HideTab,
+  .RepOrdersTable td.HideTab {
+    display: none;
+  }
+
+  .RepOrdersTable th {
+    font-size: 16px !important;
+  }
+
+  .RepOrdersTable td {
+    font-size: 15px !important;
+  }
+
+  .OrderTableViewButton {
+    padding: 10px 20px !important;
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .RepOrdersContainer {
+    margin-left: 0 !important;
+    width: 96% !important;
+  }
+
+  .RepOrdersTableContainer {
+    width: 98% !important;
+  }
+
+  .RepOrdersTable {
+    padding: 20px 5px !important;
+  }
+
+  .RepOrdersSearchContainer {
+    width: 100%;
+  }
+
+  .RepOrdersSearchIcon {
+    right: 35px;
+  }
+
+  .RepOrdersTableScroll {
+    max-height: 600px !important;
+  }
+
+  .RepOrdersTable th.HideMobile,
+  .RepOrdersTable td.HideMobile {
+    display: none;
+  }
+
+  .RepOrdersTable th {
+    font-size: 14px !important;
+  }
+
+  .RepOrdersTable td {
+    font-size: 13px !important;
+  }
+
+  .OrderTableViewButton {
+    padding: 12px 18px !important;
+    font-size: 14px !important;
+  }
+}

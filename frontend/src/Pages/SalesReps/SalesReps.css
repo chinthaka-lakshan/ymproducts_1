@@ -1,0 +1,145 @@
+/* General Container */
+.sales-reps {
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    padding: 30px;
+    background-color: #f8f9fa;
+    position:fixed;
+    top: 16%;
+    left: 20%;
+    width: 70%;
+   
+   
+  }
+  .header-section h2{
+    font-size: 24px;
+    position: relative;
+    top: -15px;
+
+  }
+  
+  /* Header */
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    
+  }
+  
+  .add-new {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+  
+  .add-new:hover {
+    background-color: #218838;
+    color: #ddd;
+  }
+  
+  /* Table Styles */
+  .table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  thead {
+    background: #007bff;
+    color: white;
+  }
+  
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+    color: black;
+  }
+  
+  .actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .edit {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .delete {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .edit:hover {
+    background-color: #218838;
+    color: #ddd;
+  }
+  
+  .delete:hover {
+    background-color: #c82333;
+  }
+  
+  /* Pagination */
+  .pagination {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 15px;
+  }
+  
+  .pagination button {
+    background: #ddd;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  .pagination .active {
+    background: #007bff;
+    color: white;
+  }
+  
+  .pagination button:hover {
+    background: #007bff;
+    color: white;
+  }
+  
+  /* Responsive Styles */
+  @media (max-width: 768px) {
+    .header-section {
+      flex-direction: column;
+      gap: 10px;
+    }
+  
+    .actions {
+      flex-direction: column;
+    }
+  
+    th, td {
+      font-size: 12px;
+      padding: 8px;
+    }
+  }
+  

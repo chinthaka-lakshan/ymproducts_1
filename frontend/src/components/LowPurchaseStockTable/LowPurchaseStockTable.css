@@ -1,0 +1,80 @@
+.LowPurchaseStockTable {
+    align-items: center;
+    justify-content: center;
+    box-shadow: 1px 1px 5px 1px #a0afc1;
+    border-radius: 5px;
+    width: 28%;
+    padding: 10px;
+    text-align: center;
+    background-color: white;
+
+    .LowPurchaseStockTableTitle {
+        font-size: 20px;
+        color: #333;
+        display: block;
+        margin-bottom: 10px;
+        width: 100%;
+    }
+
+    .LowPurchaseTable {
+        width: 100%;
+        border-collapse: collapse;
+        align-items: center;
+        justify-content: center;
+
+        .ItemColumn {
+            width: 65%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .QuantityColumn {
+            width: 35%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            color: #616161;
+        }
+
+        td {
+            color: #333;
+        }
+    }
+
+    .LowStockPagination {
+        margin-top: 10px;
+
+        button {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border: none;
+            background-color: darkcyan;
+            color: white;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        span {
+            font-size: 14px;
+            color: #333;
+        }
+    }
+}
