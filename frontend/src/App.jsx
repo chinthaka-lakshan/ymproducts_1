@@ -14,7 +14,7 @@ import SalesReps from './Pages/SalesReps/SalesReps.jsx';
 import RepInvoice from './Pages/RepInvoice/RepInvoice.jsx';
 import Invoice from "./Pages/Invoice/Invoice.jsx";
 import RepReturns from "./Pages/RepReturns/RepReturns.jsx";
-import RepRegistration from './Pages/RepRegistration/RepRegistration.jsx';
+import RegisterRep from './Pages/RegisterRep/RegisterRep.jsx';
 import RepLogin from './Pages/Login/RepLogin/RepLogin.jsx';
 import RepDashboard from './Pages/Dashboard/RepDashboard/RepDashboard.jsx';
 import RepOrders from './Pages/RepOrders/RepOrders.jsx';
@@ -39,7 +39,7 @@ function App() {
           <Route path="/cashFlow" element={<CashFlow />}/>
           <Route path='/adminOrdersHistory' element={<OrdersHistory/>}/>
           <Route path="/salesreps" element={<SalesReps />}/>
-          <Route path='/repRegistration' element={<RepRegistration />}/>
+          <Route path='/register-rep' element={<RegisterRep />}/>
           <Route path="/repLogin" element={<RepLogin />}/>
           <Route path='/repDashboard' element={<RepDashboard/>}/>
           <Route path='/repOrders' element={<RepOrders/>}/>
@@ -49,7 +49,7 @@ function App() {
           <Route path="/repShops" element={<RepShops/>}/>
 
           {/* edit rep by rep id */}
-          <Route path="/editrep/:id" element={<EditRep />} />
+          <Route path="/edit-rep/:id" element={<RegisterRep isEdit={true}/>} />
 
           
         </Routes>
