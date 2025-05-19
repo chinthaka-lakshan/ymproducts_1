@@ -84,7 +84,7 @@ const RegisterRep = ({ isEdit = false }) => {
           <div className="SalesRepsTableTop">
             <h1>{isEdit ? 'Edit' : 'Register New'} Sales Representative</h1>
 
-            <form onSubmit={handleSubmit}>
+            <form className='RepRegForm' onSubmit={handleSubmit}>
               {/* Name Field */}
               <div className="form-group">
                 <label>Name</label>
