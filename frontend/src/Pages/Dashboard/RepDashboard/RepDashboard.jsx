@@ -247,9 +247,113 @@ const RepDashboard = () => {
   // };
 
   // Render helper components
+
+  //work well
+  // const handleGenerateInvoice = async () => {
+  //   try {
+  //     const { subtotal, totalDiscount } = calculateTotals();
+
+  //     if (orderToEdit.isReturn) {
+  //       const returnRecord = {
+  //         shop_id: orderToEdit.shop.id,
+  //         type: orderToEdit.isGood ? "good" : "bad",
+  //         return_cost: subtotal,
+  //         rep_name: username,
+  //         items: orderToEdit.items.map((item) => ({
+  //           item_id: item.item.id,
+  //           quantity: item.orderQty,
+  //         })),
+  //       };
+
+  //       await api.post("/returns", returnRecord);
+  //       alert("Return created successfully");
+  //     } else {
+  //       const orderData = {
+  //         shop_id: orderToEdit.shop.id,
+  //         total_price: subtotal,
+  //         items: orderToEdit.items.map((item) => ({
+  //           item_id: item.item.id,
+  //           quantity: item.orderQty,
+  //           item_expenses: 0,
+  //         })),
+  //         user_name: username,
+  //         status: "Pending",
+  //         discount: totalDiscount,
+  //       };
+
+  //       const response = await api.post("/orders", orderData);
+  //       alert("Order created successfully");
+  //     }
+
+  //     setOrderToEdit(null);
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //     alert(
+  //       error.response?.data?.message ||
+  //         error.response?.data?.error ||
+  //         "An error occurred"
+  //     );
+  //   }
+  // };
+  ////worked 3
+  // const handleGenerateInvoice = async () => {
+  //   try {
+  //     const { subtotal, totalDiscount } = calculateTotals();
+
+  //     if (orderToEdit.isReturn) {
+  //       // Return creation logic remains the same
+  //       const returnRecord = {
+  //         shop_id: orderToEdit.shop.id,
+  //         type: orderToEdit.isGood ? "good" : "bad",
+  //         return_cost: subtotal,
+  //         rep_name: username,
+  //         items: orderToEdit.items.map((item) => ({
+  //           item_id: item.item.id,
+  //           quantity: item.orderQty,
+  //         })),
+  //       };
+
+  //       await api.post("/returns", returnRecord);
+  //       alert("Return created successfully");
+  //     } else {
+  //       // Calculate how much of the return balance to use
+  //       const returnBalanceToUse = Math.min(returnBalance, subtotal);
+  //       const remainingReturnBalance = returnBalance - returnBalanceToUse;
+  //       const finalAmountToPay = subtotal - returnBalanceToUse;
+
+  //       const orderData = {
+  //         shop_id: orderToEdit.shop.id,
+  //         total_price: finalAmountToPay,
+  //         items: orderToEdit.items.map((item) => ({
+  //           item_id: item.item.id,
+  //           quantity: item.orderQty,
+  //           item_expenses: 0,
+  //         })),
+  //         user_name: username,
+  //         status: "Pending",
+  //         discount: totalDiscount,
+  //         return_balance_used: returnBalanceToUse,
+  //         remaining_return_balance: remainingReturnBalance,
+  //       };
+
+  //       const response = await api.post("/orders", orderData);
+  //       alert("Order created successfully");
+  //     }
+
+  //     setOrderToEdit(null);
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //     alert(
+  //       error.response?.data?.message ||
+  //         error.response?.data?.error ||
+  //         "An error occurred"
+  //     );
+  //   }
+  // };
+
   const handleGenerateInvoice = async () => {
     try {
-      const { subtotal, totalDiscount } = calculateTotals();
+      const { subtotal, totalDiscount, grandTotal } = calculateTotals();
 
       if (orderToEdit.isReturn) {
         const returnRecord = {
@@ -266,9 +370,14 @@ const RepDashboard = () => {
         await api.post("/returns", returnRecord);
         alert("Return created successfully");
       } else {
+        // Calculate how much of the return balance to use
+        const returnBalanceToUse = Math.min(returnBalance, grandTotal); // Use grandTotal instead of subtotal
+        const remainingReturnBalance = returnBalance - returnBalanceToUse;
+        const finalAmountToPay = grandTotal - returnBalanceToUse;
+
         const orderData = {
           shop_id: orderToEdit.shop.id,
-          total_price: subtotal,
+          total_price: finalAmountToPay, // This is now the final amount after all deductions
           items: orderToEdit.items.map((item) => ({
             item_id: item.item.id,
             quantity: item.orderQty,
@@ -277,6 +386,8 @@ const RepDashboard = () => {
           user_name: username,
           status: "Pending",
           discount: totalDiscount,
+          return_balance_used: returnBalanceToUse,
+          remaining_return_balance: remainingReturnBalance,
         };
 
         const response = await api.post("/orders", orderData);
@@ -293,7 +404,6 @@ const RepDashboard = () => {
       );
     }
   };
-
   const renderShopCards = () =>
     shops
       .filter((shop) =>

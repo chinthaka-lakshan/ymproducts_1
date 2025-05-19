@@ -10,19 +10,25 @@ const api = axios.create({
 });
 
 // Request interceptor
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Response interceptor
 api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 401) {
+  (response) => response,
+  (error) => {
+    if (error.response.status === 401) {
+      // Handle unauthorized access
       localStorage.removeItem('auth_token');
       window.location.href = '/';
     }
