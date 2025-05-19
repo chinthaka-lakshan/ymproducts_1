@@ -17,6 +17,7 @@ const RepOrders = () => {
   const ordersPerPage = 5;
   const userToken = localStorage.getItem("admin_token");
   const loggedUser = localStorage.getItem("username");
+  const [viewingOrder, setViewingOrder] = useState(null);
   const navigate = useNavigate();
 
   // Sidebar state
@@ -84,6 +85,17 @@ const RepOrders = () => {
 
   const handleCloseAlert = () => {
     setAlert(prev => ({ ...prev, open: false }));
+  };
+
+  const handleViewOrder = async (order) => {
+    try {
+      const response = await api.get(`/orders/${order.id}/items`);
+      if (response.data.items?.length > 0) {
+        setViewingOrder(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching order items:", error);
+    }
   };
 
   // Status change handler
@@ -214,7 +226,7 @@ const RepOrders = () => {
                         <td>
                           <button 
                             className="OrderTableViewButton"
-                            onClick={() => navigate(`/orders/${order.id}`)}
+                            onClick={() => handleViewOrder(order)}
                           >
                             View
                           </button>
@@ -225,6 +237,8 @@ const RepOrders = () => {
                 </table>
               )}
             </div>
+
+            
 
             {!loading && !error && filteredOrders.length > 0 && (
               <div className="pagination-container-rep">
@@ -267,6 +281,59 @@ const RepOrders = () => {
           </div>
         </div>
       </div>
+
+      {viewingOrder && (
+        <div className="ModalBackdrop">
+          <div className="Modal">
+            <h2>Order Details</h2>
+            <div className="ScrollableContent">
+              <div className="orderdetails">
+                <div className="orderdetails1">
+                  <p>
+                    <strong>Date:</strong> {viewingOrder.created_at}
+                  </p>
+                  <div className="repname">
+                    <p>
+                      <strong>Rep Name:</strong> {viewingOrder.user_name}
+                    </p>
+                  </div>
+                </div>
+                <div className="orderdetails2">
+                  <p>
+                    <strong>Shop Name:</strong> {viewingOrder.shop_id}
+                  </p>
+                  <p>
+                    <strong>Total Amount:</strong> Rs.{viewingOrder.total_price}
+                  </p>
+                </div>
+              </div>
+              <table className="customtable">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {viewingOrder.items.map((item, index) => (
+                    <tr key={index}>
+                      <td>{item.item}</td>
+                      <td>{item.quantity}</td>
+                      <td>
+                        {(item.quantity * parseFloat(item.unitPrice)).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="Action">
+              <button onClick={() => setViewingOrder(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Snackbar
         open={alert.open}
