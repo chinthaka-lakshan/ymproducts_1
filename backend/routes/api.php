@@ -21,8 +21,6 @@ Route::apiResource('purchase_stock', PurchaseStockController::class);
 Route::get('/purchase-stock/low', [PurchaseStockController::class, 'lowStock']);
 Route::post('/purchase_stock/{id}/add', [PurchaseStockController::class, 'addStock']);
 Route::put('shops/{shopId}/return-balance',[ShopController::class,'updateReturnBalance']);
-Route::apiResource('items', ItemController::class);
-Route::put('/items/{id}/add-stock', [ItemController::class, 'addStock']);
 
 Route::apiResource('orders', OrderController::class);
 Route::get('/calculate-order-cost/{shopId}/{orderAmount}', [OrderController::class, 'calculateOrderCost']);
@@ -30,12 +28,10 @@ Route::get('/orders/{id}/items', [OrderController::class, 'showOrderItems']);
 Route::put('/orders/{id}/status',[OrderController::class,'updateStatus']);
 
 Route::get('returns/{shopId}/balance',[ReturnController::class,'getReturnBalance']);
-
- Route::get('returns/shop/{shopId}',[ ReturnController::class,'getShopReturns']);
-
- Route::get('returns/{returnId}/items',[ReturnController::class,'getReturnItems']);
- Route::post('returns/{returnId}/items',[ReturnController::class,'store']);
- Route::put('returns/{returnId}/items/{itemId"',[ReturnController::class,'getReturnItems']);
+Route::get('returns/shop/{shopId}',[ ReturnController::class,'getShopReturns']);
+Route::get('returns/{returnId}/items',[ReturnController::class,'getReturnItems']);
+Route::post('returns/{returnId}/items',[ReturnController::class,'store']);
+Route::put('returns/{returnId}/items/{itemId"',[ReturnController::class,'getReturnItems']);
 Route::delete('returns/{returnId}/items/{itemId}',[ReturnController::class, 'removeReturn']);
 Route::get('returns/good', [ReturnController::class, 'goodReturns']);
 Route::get('returns/bad', [ReturnController::class, 'badReturns']);
@@ -47,12 +43,15 @@ Route::put('/shops/{shop}/return-balance', [ShopController::class, 'updateReturn
 
 Route::get('/shops/{shop}/return-balance', [ReturnController::class, 'getShopReturnBalance']);
 
+
+
+
 Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('items', ItemController::class);
+    Route::put('/items/{id}/add-stock', [ItemController::class, 'addStock']);
     Route::get('/cashflows', [CashflowController::class, 'index']);
     Route::post('/cashflows', [CashflowController::class, 'store']);
     Route::get('/cashflows/{id}', [CashflowController::class, 'show']);
-
-
     Route::get('/me', [AuthController::class, 'me']);
     Route::apiResource('shops', ShopController::class);
     Route::get('/auth/verify', function () {
