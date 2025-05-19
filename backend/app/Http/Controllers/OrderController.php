@@ -522,6 +522,23 @@ public function store(Request $request)
             'order'=>$order
         ]);
     }
+    public function getPendingOrders()
+        {
+            $pendingOrders = Order::where('status', 'pending')->get();
+
+            return response()->json($pendingOrders);
+        }
+
+        public function getOrderById($id)
+        {
+            $order = Order::find($id);
+            if (!$order) {
+                return response()->json(['error' => 'Order not found'], 404);
+            }
+
+            return response()->json($order);
+        }
+
 
     public function showOrderItems($id){
         $order = Order::with(['items'=>function ($query){

@@ -1,44 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "./LowPurchaseStockTable.css";
 
 const LowPurchaseStockTable = () => {
-
-  const [data, setData] = useState([
-    { id: 1, item: "Dry Chilli", weight: 5 },
-    { id: 2, item: "Turmeric", weight: 1 },
-    { id: 3, item: "Ginger", weight: 3.5 },
-    { id: 4, item: "Pepper", weight: 7 },
-    { id: 5, item: "Cinnamon", weight: 6 },
-    { id: 6, item: "Dry Chilli", weight: 5.75 },
-    { id: 7, item: "Turmeric", weight: 1 },
-    { id: 8, item: "Ginger", weight: 3 },
-    { id: 9, item: "Pepper", weight: 7 },
-    { id: 10, item: "Cinnamon", weight: 6.4 },
-    { id: 11, item: "Dry Chilli", weight: 5 },
-    { id: 12, item: "Turmeric", weight: 1.25 },
-    { id: 13, item: "Ginger", weight: 3.2 },
-    { id: 14, item: "Pepper", weight: 7 },
-    { id: 15, item: "Cinnamon", weight: 6 },
-  ]);
-
-  const rowsPerPage = 6;
+  const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 6;
+
+  useEffect(() => {
+    axios.get("http://localhost:8000/api/purchase-stock/low")
+      .then((response) => {
+        setData(response.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching low stock data:", error);
+      });
+  }, []);
+
   const totalPages = Math.ceil(data.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const visibleRows = data.slice(startIndex, startIndex + rowsPerPage);
 
   const handleNext = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
 
   const handlePrev = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
-
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const visibleRows = data.slice(startIndex, startIndex + rowsPerPage);
 
   return (
     <div className="LowPurchaseStockTable">
@@ -62,13 +51,9 @@ const LowPurchaseStockTable = () => {
 
       {totalPages > 1 && (
         <div className="LowStockPagination">
-          <button onClick={handlePrev} disabled={currentPage === 1}>
-            Prev
-          </button>
+          <button onClick={handlePrev} disabled={currentPage === 1}>Prev</button>
           <span> Page {currentPage} of {totalPages} </span>
-          <button onClick={handleNext} disabled={currentPage === totalPages}>
-            Next
-          </button>
+          <button onClick={handleNext} disabled={currentPage === totalPages}>Next</button>
         </div>
       )}
     </div>
