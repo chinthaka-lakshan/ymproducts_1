@@ -19,12 +19,16 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/reset-password-with-otp', [AuthController::class, 'resetPasswordWithOtp']);
 Route::apiResource('purchase_stock', PurchaseStockController::class);
 Route::get('/purchase-stock/low', [PurchaseStockController::class, 'lowStock']);
+Route::get('/distribution-stock/low', [ItemController::class, 'Item_lowStock']);
 Route::post('/purchase_stock/{id}/add', [PurchaseStockController::class, 'addStock']);
 Route::put('shops/{shopId}/return-balance',[ShopController::class,'updateReturnBalance']);
 
 Route::apiResource('orders', OrderController::class);
+Route::get('/orders', [OrderController::class, 'index']);
 Route::get('/calculate-order-cost/{shopId}/{orderAmount}', [OrderController::class, 'calculateOrderCost']);
 Route::get('/orders/{id}/items', [OrderController::class, 'showOrderItems']);
+Route::get('/pending_orders', [OrderController::class, 'getPendingOrders']);
+Route::get('/orders/{id}', [OrderController::class, 'getOrderById']);
 Route::put('/orders/{id}/status',[OrderController::class,'updateStatus']);
 
 Route::get('returns/{shopId}/balance',[ReturnController::class,'getReturnBalance']);
