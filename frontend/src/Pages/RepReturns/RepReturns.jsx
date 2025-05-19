@@ -12,6 +12,7 @@ import Alert from '@mui/material/Alert';
 const RepReturns = () => {
   const [goodReturns, setGoodReturns] = useState([]);
   const [badReturns, setBadReturns] = useState([]);
+  const [shops, setShops] = useState([]);
   const [showGoodReturns, setShowGoodReturns] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -23,49 +24,62 @@ const RepReturns = () => {
   });
   const navigate = useNavigate();
 
-  // Fetch returns from backend
-  useEffect(() => {
-// In your fetchReturns function, ensure data is properly formatted
-// In your fetchReturns function, ensure data is properly formatted
-const fetchReturns = async () => {
-  try {
-    setLoading(true);
-    const [goodRes, badRes] = await Promise.all([
-      api.get('/returns/good').catch(e => {
-        console.error('Good returns error:', e.response?.data);
-        throw e;
-      }),
-      api.get('/returns/bad').catch(e => {
-        console.error('Bad returns error:', e.response?.data); 
-        throw e;
-      })
-    ]);
-    
-    const processReturns = (returns) => {
-      return returns.data.data.map(rtn => ({
-        ...rtn,
-        return_cost: Number(rtn.return_cost) || 0,
-        shop_name: rtn.shop_name || rtn.shop?.name || 'Unknown Shop'
-      }));
-    };
-    
-    setGoodReturns(processReturns(goodRes));
-    setBadReturns(processReturns(badRes));
-    setError(null);
-  } catch (err) {
-    console.error('API Error:', err.response?.data || err.message);
-    setError(err.response?.data?.message || 'Failed to load returns');
-    showAlert(
-      err.response?.data?.message || 'Server error occurred', 
-      'error'
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  // Get shop name by ID
+  const getShopName = (shopId) => {
+    const shop = shops.find(shop => shop.id === shopId);
+    return shop ? shop.shop_name : 'Unknown Shop';
+  };
 
-    fetchReturns();
-  }, []);
+  // Fetch returns and shops from backend
+  // Fetch returns and shops from backend
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch shops and returns in parallel
+      const [shopsResponse, goodRes, badRes] = await Promise.all([
+        api.get('/shops'),
+        api.get('/returns/good'),
+        api.get('/returns/bad')
+      ]);
+
+      // Create a shop map for quick lookup
+      const shopMap = {};
+      shopsResponse.data.forEach(shop => {
+        shopMap[shop.id] = shop.shop_name;
+      });
+
+      const processReturns = (returns) => {
+        return returns.data.data.map(rtn => {
+          const shopId = rtn.shop_id || rtn.shop?.id;
+          return {
+            ...rtn,
+            return_cost: Number(rtn.return_cost) || 0,
+            shop_name: shopMap[shopId] || 'Shop',
+            shop_id: shopId || null
+          };
+        });
+      };
+
+      setShops(shopsResponse.data);
+      setGoodReturns(processReturns(goodRes));
+      setBadReturns(processReturns(badRes));
+      setError(null);
+    } catch (err) {
+      console.error('API Error:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Failed to load returns');
+      showAlert(
+        err.response?.data?.message || 'Server error occurred', 
+        'error'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
 
   // Alert helpers
   const showAlert = (message, severity = 'success') => {
@@ -88,13 +102,17 @@ const fetchReturns = async () => {
   // Filter and sort returns
   const returnsToFilter = showGoodReturns ? goodReturns : badReturns;
 
-  const filteredReturns = returnsToFilter
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .filter(rtn =>
-      rtn.created_at.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rtn.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rtn.return_cost.toString().includes(searchQuery)
-    );
+  // Search filtering for returns
+const filteredReturns = returnsToFilter.filter(rtn => {
+  const searchTerm = searchQuery.toLowerCase();
+  const shopName = rtn.shop_name.toLowerCase(); // Already processed in the data fetch
+  return (
+    shopName.includes(searchTerm) ||
+    rtn.created_at.toLowerCase().includes(searchTerm) ||
+    rtn.return_cost.toString().includes(searchTerm)
+  );
+});
+    
 
   // Sidebar logic
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -210,8 +228,7 @@ const fetchReturns = async () => {
                     {currentReturns.map(rtn => (
                       <tr key={rtn.id}>
                         <td>{rtn.created_at ? new Date(rtn.created_at).toLocaleDateString() : 'N/A'}</td>
-                        
-                        <td>{rtn.shop_name || 'Unknown Shop'}</td>
+                        <td>{rtn.shop_name}</td>
                         <td className="HideTab">
                           {typeof rtn.return_cost === 'number' 
                             ? rtn.return_cost.toFixed(2)
