@@ -3,7 +3,7 @@ import "./DistributionStock.css";
 import AdminNavbar from "../../components/AdminNavbar/AdminNavbar.jsx";
 import AdminSidebar from "../../components/Sidebar/AdminSidebar/AdminSidebar.jsx";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import api from "../../api/axios.js"; // Using the centralized axios instance
+import api from "../../api/axios.js"; // Axios instance
 
 const DistributionStock = () => {
   const [items, setItems] = useState([]);
@@ -28,7 +28,7 @@ const DistributionStock = () => {
       setItems(response.data);
     } catch (error) {
       console.error("Error fetching items:", error);
-      alert("Failed to fetch items");
+      alert("Failed to fetch items.");
     }
   };
 
@@ -41,7 +41,14 @@ const DistributionStock = () => {
 
   const handleAddItem = async () => {
     try {
-      const response = await api.post("/items", formData.add);
+      const payload = {
+        item: formData.add.item,
+        unitPrice: parseFloat(formData.add.unitPrice),
+        itemCost: parseFloat(formData.add.itemCost),
+        quantity: parseInt(formData.add.quantity),
+      };
+
+      const response = await api.post("/items", payload);
       setItems((prev) => [...prev, response.data.item]);
       setModal((prev) => ({ ...prev, add: false }));
       setFormData((prev) => ({
@@ -50,17 +57,24 @@ const DistributionStock = () => {
       }));
       alert("Item added successfully!");
     } catch (error) {
-      console.error("Error adding item:", error);
+      console.error("Error adding item:", error.response || error);
       alert("Failed to add item.");
     }
   };
 
   const handleEditItem = async () => {
     try {
-      await api.put(`/items/${formData.edit.id}`, formData.edit);
+      const payload = {
+        item: formData.edit.item,
+        unitPrice: parseFloat(formData.edit.unitPrice),
+        itemCost: parseFloat(formData.edit.itemCost),
+        quantity: parseInt(formData.edit.quantity),
+      };
+
+      await api.put(`/items/${formData.edit.id}`, payload);
       setItems((prev) =>
         prev.map((item) =>
-          item.id === formData.edit.id ? formData.edit : item
+          item.id === formData.edit.id ? { ...item, ...payload } : item
         )
       );
       setModal((prev) => ({ ...prev, edit: false }));
@@ -75,7 +89,7 @@ const DistributionStock = () => {
     try {
       const response = await api.put(
         `/items/${formData.addStock.id}/add-stock`,
-        { quantity: formData.addStock.quantityToAdd }
+        { quantity: parseInt(formData.addStock.quantityToAdd) }
       );
 
       setItems((prev) =>
@@ -107,9 +121,18 @@ const DistributionStock = () => {
   };
 
   const openModal = (type, item = null) => {
-    if (type === "edit") {
-      setFormData((prev) => ({ ...prev, edit: { ...item } }));
-    } else if (type === "addStock") {
+    if (type === "edit" && item) {
+      setFormData((prev) => ({
+        ...prev,
+        edit: {
+          id: item.id,
+          item: item.item,
+          unitPrice: item.unitPrice,
+          itemCost: item.itemCost,
+          quantity: item.quantity,
+        },
+      }));
+    } else if (type === "addStock" && item) {
       setFormData((prev) => ({
         ...prev,
         addStock: { id: item.id, quantityToAdd: "" },
@@ -147,7 +170,11 @@ const DistributionStock = () => {
             Cancel
           </button>
           <button className="SaveButton" onClick={onSubmit}>
-            {type === "add" ? "Save" : type === "edit" ? "Update" : "Add Stock"}
+            {type === "add"
+              ? "Save"
+              : type === "edit"
+              ? "Update"
+              : "Add Stock"}
           </button>
         </div>
       </div>
@@ -180,7 +207,7 @@ const DistributionStock = () => {
                       <strong>Quantity:</strong> {item.quantity}
                     </span>
                     <span>
-                      <strong>Cost (LKR)</strong> {item.itemCost}
+                      <strong>Cost (LKR):</strong> {item.itemCost}
                     </span>
                   </div>
                 </div>
@@ -210,23 +237,15 @@ const DistributionStock = () => {
         </div>
       </div>
 
-      {/* Add Modal */}
+      {/* Modals */}
       {modal.add && (
         <Modal
           type="add"
           title="Add New Distribution Item"
           fields={[
             { name: "item", placeholder: "Enter Item Name" },
-            {
-              name: "unitPrice",
-              placeholder: "Enter Unit Price (LKR)",
-              type: "number",
-            },
-            {
-              name: "itemCost",
-              placeholder: "Enter Unit Cost (LKR)",
-              type: "number",
-            },
+            { name: "unitPrice", placeholder: "Enter Unit Price", type: "number" },
+            { name: "itemCost", placeholder: "Enter Unit Cost", type: "number" },
             { name: "quantity", placeholder: "Enter Quantity", type: "number" },
           ]}
           onSubmit={handleAddItem}
@@ -234,23 +253,14 @@ const DistributionStock = () => {
         />
       )}
 
-      {/* Edit Modal */}
       {modal.edit && (
         <Modal
           type="edit"
           title="Update Distribution Item"
           fields={[
             { name: "item", placeholder: "Enter Item Name" },
-            {
-              name: "unitPrice",
-              placeholder: "Enter Unit Price (LKR)",
-              type: "number",
-            },
-            {
-              name: "itemCost",
-              placeholder: "Enter Unit Cost (LKR)",
-              type: "number",
-            },
+            { name: "unitPrice", placeholder: "Enter Unit Price", type: "number" },
+            { name: "itemCost", placeholder: "Enter Unit Cost", type: "number" },
             { name: "quantity", placeholder: "Enter Quantity", type: "number" },
           ]}
           onSubmit={handleEditItem}
@@ -258,17 +268,12 @@ const DistributionStock = () => {
         />
       )}
 
-      {/* Add Stock Modal */}
       {modal.addStock && (
         <Modal
           type="addStock"
           title="Add Stock to Item"
           fields={[
-            {
-              name: "quantityToAdd",
-              placeholder: "Enter Quantity To Add",
-              type: "number",
-            },
+            { name: "quantityToAdd", placeholder: "Enter Quantity", type: "number" },
           ]}
           onSubmit={handleAddStock}
           onCancel={() => closeModal("addStock")}
