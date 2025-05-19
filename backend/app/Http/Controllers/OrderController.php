@@ -97,7 +97,154 @@ class OrderController extends Controller
     //         }
     // }
     
-    public function store(Request $request)
+   // //worked well
+//     public function store(Request $request)
+// {
+//     \Log::info("Incoming order request:", $request->all());
+    
+//     try {
+//         $validated = $request->validate([
+//             'shop_id' => 'required|exists:shops,id',
+//             'total_price' => 'required|numeric',
+//             'items' => 'required|array',
+//             'items.*.item_id' => 'required|exists:items,id',
+//             'items.*.quantity' => 'required|integer|min:1',
+//             'items.*.item_expenses' => 'nullable|numeric|min:0',
+//             'discount' => 'nullable|numeric|min:0',
+//             'user_name' => 'required|string',
+//         ]);
+
+//         return DB::transaction(function () use ($validated) {
+//             $shop = Shop::findOrFail($validated['shop_id']);
+            
+//             $order = Order::create([
+//                 'total_price' => $validated['total_price'],
+//                 'return_balance' => 0, // Initialize to 0, adjust as needed
+//                 'shop_id' => $validated['shop_id'],
+//                 'user_name' => $validated['user_name'],
+//                 'status' => "Pending",
+//                 'discount' => $validated['discount'] ?? 0,
+//             ]);
+
+//             $formattedItems = [];
+//             foreach ($validated['items'] as $item) {
+//                 $formattedItems[$item['item_id']] = [
+//                     'quantity' => $item['quantity'],
+//                     'item_expenses' => $item['item_expenses'] ?? 0
+//                 ];
+//             }
+            
+//             $order->items()->attach($formattedItems);
+
+//             return response()->json([
+//                 'message' => 'Order created successfully',
+//                 'order' => $order->load(['items' => function($query) {
+//                     $query->select('items.id', 'items.item', 'items.unitPrice', 
+//                                  'order_items.quantity', 'order_items.item_expenses');
+//                 }]),
+//             ], 201);
+//         });
+
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         return response()->json(['errors' => $e->errors()], 422);
+//     } catch (\Exception $e) {
+//         \Log::error('Order creation failed: '. $e->getMessage());
+//         return response()->json([
+//             'error' => "Failed to create order",
+//             'message' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+//worked 2
+// public function store(Request $request)
+// {
+//     \Log::info("Incoming order request:", $request->all());
+    
+//     try {
+//         $validated = $request->validate([
+//             'shop_id' => 'required|exists:shops,id',
+//             'total_price' => 'required|numeric',
+//             'items' => 'required|array',
+//             'items.*.item_id' => 'required|exists:items,id',
+//             'items.*.quantity' => 'required|integer|min:1',
+//             'items.*.item_expenses' => 'nullable|numeric|min:0',
+//             'discount' => 'nullable|numeric|min:0',
+//             'user_name' => 'required|string',
+//             'return_balance_used' => 'nullable|numeric|min:0',
+//         ]);
+
+//         return DB::transaction(function () use ($validated) {
+//             $shop = Shop::findOrFail($validated['shop_id']);
+            
+//             // Process return balance if being used
+//             $remainingReturnBalance = $shop->return_balance;
+//             $returnBalanceUsed = $validated['return_balance_used'] ?? 0;
+            
+//             if ($returnBalanceUsed > 0) {
+//                 // Get returns ordered by oldest first
+//                 $returns = Returns::where('shop_id', $validated['shop_id'])
+//                     ->where('return_cost', '>', 0)
+//                     ->orderBy('created_at')
+//                     ->get();
+                
+//                 $balanceToConsume = $returnBalanceUsed;
+                
+//                 foreach ($returns as $return) {
+//                     if ($balanceToConsume <= 0) break;
+                    
+//                     $consumable = min($return->return_cost, $balanceToConsume);
+//                     $return->decrement('return_cost', $consumable);
+//                     $balanceToConsume -= $consumable;
+//                 }
+                
+//                 // Update shop's return balance
+//                 $remainingReturnBalance = $shop->return_balance - $returnBalanceUsed;
+//                 $shop->update(['return_balance' => $remainingReturnBalance]);
+//             }
+
+//             $order = Order::create([
+//                 'total_price' => $validated['total_price'],
+//                 'return_balance' => $returnBalanceUsed,
+//                 'shop_id' => $validated['shop_id'],
+//                 'user_name' => $validated['user_name'],
+//                 'status' => "Pending",
+//                 'discount' => $validated['discount'] ?? 0,
+//             ]);
+
+//             $formattedItems = [];
+//             foreach ($validated['items'] as $item) {
+//                 $formattedItems[$item['item_id']] = [
+//                     'quantity' => $item['quantity'],
+//                     'item_expenses' => $item['item_expenses'] ?? 0
+//                 ];
+//             }
+            
+//             $order->items()->attach($formattedItems);
+
+//             return response()->json([
+//                 'message' => 'Order created successfully',
+//                 'order' => $order->load(['items' => function($query) {
+//                     $query->select('items.id', 'items.item', 'items.unitPrice', 
+//                                  'order_items.quantity', 'order_items.item_expenses');
+//                 }]),
+//                 'return_balance_used' => $returnBalanceUsed,
+//                 'remaining_return_balance' => $remainingReturnBalance
+//             ], 201);
+//         });
+
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         return response()->json(['errors' => $e->errors()], 422);
+//     } catch (\Exception $e) {
+//         \Log::error('Order creation failed: '. $e->getMessage());
+//         return response()->json([
+//             'error' => "Failed to create order",
+//             'message' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+public function store(Request $request)
 {
     \Log::info("Incoming order request:", $request->all());
     
@@ -111,37 +258,94 @@ class OrderController extends Controller
             'items.*.item_expenses' => 'nullable|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'user_name' => 'required|string',
+            'return_balance_used' => 'nullable|numeric|min:0',
         ]);
 
         return DB::transaction(function () use ($validated) {
             $shop = Shop::findOrFail($validated['shop_id']);
             
+            // Process return balance if being used
+            $remainingReturnBalance = $shop->return_balance;
+            $returnBalanceUsed = $validated['return_balance_used'] ?? 0;
+            
+            if ($returnBalanceUsed > 0) {
+                $returns = Returns::where('shop_id', $validated['shop_id'])
+                    ->where('return_cost', '>', 0)
+                    ->orderBy('created_at')
+                    ->get();
+                
+                $balanceToConsume = $returnBalanceUsed;
+                
+                foreach ($returns as $return) {
+                    if ($balanceToConsume <= 0) break;
+                    
+                    $consumable = min($return->return_cost, $balanceToConsume);
+                    $return->decrement('return_cost', $consumable);
+                    $balanceToConsume -= $consumable;
+                }
+                
+                $remainingReturnBalance = $shop->return_balance - $returnBalanceUsed;
+                $shop->update(['return_balance' => $remainingReturnBalance]);
+            }
+
             $order = Order::create([
                 'total_price' => $validated['total_price'],
-                'return_balance' => 0, // Initialize to 0, adjust as needed
+                'return_balance' => $returnBalanceUsed,
                 'shop_id' => $validated['shop_id'],
                 'user_name' => $validated['user_name'],
                 'status' => "Pending",
                 'discount' => $validated['discount'] ?? 0,
             ]);
 
-            $formattedItems = [];
-            foreach ($validated['items'] as $item) {
-                $formattedItems[$item['item_id']] = [
-                    'quantity' => $item['quantity'],
-                    'item_expenses' => $item['item_expenses'] ?? 0
-                ];
-            }
+            $backorderedItems = [];
             
-            $order->items()->attach($formattedItems);
+            foreach ($validated['items'] as $itemData) {
+                $item = Item::findOrFail($itemData['item_id']);
+                $orderedQuantity = $itemData['quantity'];
+                $currentStock = $item->quantity;
+                
+                // Calculate new quantity (can go negative)
+                $newQuantity = $currentStock - $orderedQuantity;
+                
+                // Update item stock
+                $item->update(['quantity' => $newQuantity]);
+                
+                // Track backordered items
+                if ($newQuantity < 0) {
+                    $backorderedItems[] = [
+                        'item_id' => $item->id,
+                        'item_name' => $item->item,
+                        'ordered_quantity' => $orderedQuantity,
+                        'available_stock' => $currentStock,
+                        'backordered_quantity' => abs($newQuantity),
+                        'unit_price' => $item->unitPrice
+                    ];
+                }
+                
+                // Only include fields that exist in the pivot table
+                $order->items()->attach($itemData['item_id'], [
+                    'quantity' => $itemData['quantity'],
+                    'item_expenses' => $itemData['item_expenses'] ?? 0
+                ]);
+            }
 
-            return response()->json([
+            $response = [
                 'message' => 'Order created successfully',
                 'order' => $order->load(['items' => function($query) {
                     $query->select('items.id', 'items.item', 'items.unitPrice', 
                                  'order_items.quantity', 'order_items.item_expenses');
                 }]),
-            ], 201);
+                'return_balance_used' => $returnBalanceUsed,
+                'remaining_return_balance' => $remainingReturnBalance,
+                'has_backorders' => !empty($backorderedItems),
+            ];
+            
+            if (!empty($backorderedItems)) {
+                $response['backordered_items'] = $backorderedItems;
+                $response['message'] = 'Order created with backordered items';
+            }
+
+            return response()->json($response, 201);
         });
 
     } catch (\Illuminate\Validation\ValidationException $e) {
@@ -150,11 +354,11 @@ class OrderController extends Controller
         \Log::error('Order creation failed: '. $e->getMessage());
         return response()->json([
             'error' => "Failed to create order",
-            'message' => $e->getMessage()
+            'message' => $e->getMessage(),
+            'trace' => config('app.debug') ? $e->getTrace() : null
         ], 500);
     }
 }
-    
     // Show single order
     public function show($id)
     {
