@@ -19,7 +19,6 @@ import RepLogin from './Pages/Login/RepLogin/RepLogin.jsx';
 import RepDashboard from './Pages/Dashboard/RepDashboard/RepDashboard.jsx';
 import RepOrders from './Pages/RepOrders/RepOrders.jsx';
 import RepShops from './Pages/RepShops/RepShops.jsx';
-import EditRep from './Pages/RepRegistration/EditRep.jsx';
 
 function App() {
   const [count, setCount] = useState(0);
