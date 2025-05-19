@@ -397,7 +397,7 @@
   margin-left: 10px;
 }
 
-/*.invoice-container {
+.invoice-container {
   padding: 10px;
   background-color: #effbfd;
   border-radius: 8px;
@@ -459,7 +459,7 @@ th, td {
 
 .invoice-popup {
   position: absolute;
-  top: 60%;
+  top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
   background: white;
@@ -467,7 +467,7 @@ th, td {
   padding: 40px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
   width: 50%;
-  height: 110%;
+  height: 50%;
   max-width: 600px;
   text-align: center;
 }
@@ -510,7 +510,7 @@ th{
   color: #0b0b0b;
 }
 
-.invoice-buttons {
+.InModalButtons {
   display: flex;
   justify-content: space-around;
   position: absolute;
@@ -519,7 +519,7 @@ th{
   gap: 5px;
 }
 
-.print-btn, .close-btn {
+.PrintButton, .close-btn {
   padding: 10px 15px;
   border: none;
   border-radius: 5px;
@@ -528,12 +528,12 @@ th{
   transition: transform 0.3s ease;
 }
 
-.print-btn {
+.PrintButton {
   background-color: green;
   color: white;
 }
 
-.print-btn:hover {
+.PrintButton:hover {
   background-color: darkgreen;
 }
 
@@ -544,7 +544,7 @@ th{
 
 .close-btn:hover {
   background-color: darkred;
-}*/
+}
 
 
 @media (max-width: 768px) {
