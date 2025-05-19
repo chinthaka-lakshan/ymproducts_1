@@ -41,10 +41,8 @@ Route::get('returns/good', [ReturnController::class, 'goodReturns']);
 Route::get('returns/bad', [ReturnController::class, 'badReturns']);
 Route::apiResource('returns', ReturnController::class)->except(['index']);
 
- Route::get('/shops/{shop}/return-balance', [ShopController::class, 'getReturnBalance']);
+Route::get('/shops/{shop}/return-balance', [ShopController::class, 'getReturnBalance']);
 Route::put('/shops/{shop}/return-balance', [ShopController::class, 'updateReturnBalance']);
-
-
 Route::get('/shops/{shop}/return-balance', [ReturnController::class, 'getShopReturnBalance']);
 
 Route::middleware('auth:sanctum')->group(function () {

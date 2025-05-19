@@ -196,7 +196,7 @@ const RepOrders = () => {
                       <th>Shop</th>
                       <th className="HideMobile">Rep Name</th>
                       <th className="HideTab">Total (LKR)</th>
-                      <th>Status</th>
+                      {/* <th>Status</th> */}
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -210,17 +210,6 @@ const RepOrders = () => {
                           {typeof order.total_price === 'number' 
                             ? order.total_price.toFixed(2)
                             : (parseFloat(order.total_price) || 0).toFixed(2)}
-                        </td>
-                        <td>
-                          <select 
-                            value={order.status}
-                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                            className={`status-select ${order.status.toLowerCase()}`}
-                          >
-                            <option value="Pending">Pending</option>
-                            <option value="Accepted">Accept</option>
-                            <option value="Cancelled">Cancel</option>
-                          </select>
                         </td>
                         <td>
                           <button 

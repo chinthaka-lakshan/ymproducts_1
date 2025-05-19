@@ -1,227 +1,130 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Sidebar from "../../components/Sidebar/AdminSidebar/AdminSidebar";
 import Navbar from "../../components/AdminNavbar/AdminNavbar";
 import StoreFrontIcon from "@mui/icons-material/Store";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import { Link } from "react-router-dom";
 import "./Orders.css";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import logo from "../../assets/YMlogo.PNG";
-import axios from "axios";
+import api from '../../api/axios';
 
 const Orders = () => {
+  // State management
   const [orders, setOrders] = useState([]);
-
-  // useEffect(() => {
-  //   const fetchOrders = async () => {
-  //     try {
-  //       const response = await axios.get("http://127.0.0.1:8000/api/orders", {
-  //         headers: {
-  //           Authorization: `Bearer ${userToken}`,
-  //         },
-  //         withCredentials: true,
-  //       });
-  //       console.log("Fetch Orders: ", response.data);
-
-  //       //filter Pending orders
-  //       const filterOrders = [];
-  //       response.data.forEach((element) => {
-  //         if (element.status === "Pending" || element.status === "PENDING") {
-  //           filterOrders.push(element);
-  //         }
-  //         console.log(filterOrders);
-  //       });
-  //       setOrders(filterOrders);
-  //     } catch (error) {
-  //       console.error("Error fetching orders!", error);
-  //     }
-  //   };
-  //   fetchOrders();
-  // }, []);
-
-  const fetchOrders = async () => {
-    try {
-      const response = await axios.get("http://127.0.0.1:8000/api/orders", {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
-        withCredentials: true,
-      });
-      console.log("Fetch Orders: ", response.data);
-
-      //filter Pending orders
-      const filterOrders = [];
-      response.data.forEach((element) => {
-        if (element.status === "Pending" || element.status === "PENDING") {
-          filterOrders.push(element);
-        }
-        console.log(filterOrders);
-      });
-      setOrders(filterOrders);
-    } catch (error) {
-      console.error("Error fetching orders!", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const [viewingOrder, setViewingOrder] = useState(null); // For viewing order popup
-
-  useEffect(() => {
-    console.log("Viewing Order:", viewingOrder);
-  }, [viewingOrder]);
-  const handleViewOrder = (order) => {
-    const response = axios
-      .get(`http://127.0.0.1:8000/api/orders/${order.id}/items`)
-      .then((res) => {
-        if (res.data.items && res.data.items.length > 0) {
-          setViewingOrder(res.data);
-          console.log("rpp:", res.data);
-        }
-      });
-
-    console.log("curnt:", response.data);
-  };
-  console.log("vieww:", viewingOrder);
   const [shops, setShops] = useState([]);
-
-  //fetch shops
-  useEffect(() => {
-    const fetchShops = async () => {
-      try {
-        const response = await axios.get("http://127.0.0.1:8000/api/shops");
-        setShops(response.data);
-      } catch (error) {
-        console.error("Error fetching shops: ", error);
-      }
-    };
-    fetchShops();
-  }, []);
-
-  const [items, setItems] = useState([
-    // { item: "Chilli Powder 50g", unitPrice: "250.50", quantity: 52 },
-  ]);
-
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await axios.get("http://127.0.0.1:8000/api/items");
-        setItems(response.data);
-      } catch (error) {
-        console.error("Error fetching shops: ", error);
-      }
-    };
-    fetchItems();
-    console.log("items:", items);
-  }, []);
-
+  const [items, setItems] = useState([]);
+  const [viewingOrder, setViewingOrder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const ordersPerPage = 5;
-
   const [showShopsModal, setShowShopsModal] = useState(false);
   const [showItemsModal, setShowItemsModal] = useState(false);
-
   const [selectedShop, setSelectedShop] = useState(null);
   const [afterShopSelected, setAfterShopSelected] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
-
   const [showPopup, setShowPopup] = useState(false);
   const [currentInvoiceItems, setCurrentInvoiceItems] = useState([]);
   const [orderToEdit, setOrderToEdit] = useState(null);
-  const [editingOrderId, setEditingOrderId] = useState(null); // new state
-
+  const [editingOrderId, setEditingOrderId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
   const invoiceRef = useRef();
   const navigate = useNavigate();
+  const ordersPerPage = 5;
+  const userToken = localStorage.getItem("admin_token");
+  const loggedUser = localStorage.getItem("username");
 
-  const handleStatusChange = async (id, newStatus) => {
-    if (newStatus === "Accepted") {
-      // handleAcceptOrder(id);
+  // Fetch all data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const response = await axios.put(
-          `http://127.0.0.1:8000/api/orders/${id}/status`,
-          { status: newStatus },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${userToken}`,
-            },
-          }
-        );
-        setOrders(
-          orders.map((order) =>
-            order.id === id ? { ...order, status: newStatus } : order
-          )
-        );
-        fetchOrders();
+        setLoading(true);
+        
+        const [ordersRes, shopsRes, itemsRes] = await Promise.all([
+          api.get('/orders'),
+          api.get('/shops'),
+          api.get('/items')
+        ]);
 
-        return response.data;
-      } catch (error) {
-        console.error("Error updating order status", error);
+        const filterOrders = ordersRes.data.filter(
+          order => order.status === "Pending" || order.status === "PENDING"
+        );
+
+        setOrders(filterOrders);
+        setShops(shopsRes.data);
+        setItems(itemsRes.data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError(err.response?.data?.message || 'Failed to load data');
+      } finally {
+        setLoading(false);
       }
-    } else if (newStatus === "Cancelled") {
-      const response = await axios.delete(
-        `http://127.0.0.1:8000/api/orders/${id}`,
+    };
 
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${userToken}`,
-          },
-        }
-      );
-      console.log("deleted successfully", response.data);
-      setOrders(orders.filter((order) => order.id != id));
-      return response.data;
+    fetchData();
+  }, []);
+
+  // View order details
+  const handleViewOrder = async (order) => {
+    try {
+      const response = await api.get(`/orders/${order.id}/items`);
+      if (response.data.items?.length > 0) {
+        setViewingOrder(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching order items:", error);
     }
   };
 
-  
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(orders.length / ordersPerPage);
+  // Update order status
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      if (newStatus === "Accepted") {
+        await api.put(`/orders/${id}/status`, { status: newStatus });
+        setOrders(orders.map(order => 
+          order.id === id ? { ...order, status: newStatus } : order
+        ));
+      } else if (newStatus === "Cancelled") {
+        await api.delete(`/orders/${id}`);
+        setOrders(orders.filter(order => order.id !== id));
+      }
+    } catch (error) {
+      console.error("Error updating order status", error);
+    }
+  };
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
+  // Shop selection
   const handleShopSelect = (shop) => {
     setSelectedShop(shop);
     setShowShopsModal(false);
     setShowItemsModal(true);
   };
 
+  // Item selection
   const handleItemSelect = (item) => {
-    const exists = selectedItems.find((i) => i.item === item.item);
-    if (!exists) {
+    if (!selectedItems.some(i => i.item === item.item)) {
       setSelectedItems([...selectedItems, { ...item, orderQty: 1 }]);
     }
   };
 
   const updateItemQuantity = (itemName, newQty) => {
     setSelectedItems(
-      selectedItems.map((item) =>
-        item.item === itemName
-          ? { ...item, orderQty: parseInt(newQty) || 0 }
-          : item
+      selectedItems.map(item =>
+        item.item === itemName ? { ...item, orderQty: parseInt(newQty) || 0 } : item
       )
     );
   };
 
   const removeSelectedItem = (itemName) => {
-    setSelectedItems(selectedItems.filter((item) => item.item !== itemName));
+    setSelectedItems(selectedItems.filter(item => item.item !== itemName));
   };
 
-  const userToken = localStorage.getItem("admin_token");
-
-  const loggedUser = localStorage.getItem("username");
-  console.log(loggedUser ? loggedUser + "" : "not found");
-
+  // Confirm order
   const handleConfirmOrder = async () => {
-    console.log("itemsss:", items);
-    if (!selectedShop || selectedItems.length == 0) return;
+    if (!selectedShop || selectedItems.length === 0) return;
+    
     setAfterShopSelected(selectedShop);
     const totalOrderAmount = selectedItems.reduce(
       (sum, item) => sum + item.unitPrice * item.orderQty,
@@ -229,212 +132,106 @@ const Orders = () => {
     );
 
     try {
-      const getCost = await checkAdjustedOrderCost(
+      const adjustedCost = await checkAdjustedOrderCost(
         selectedShop.id,
         totalOrderAmount
       );
-      console.log("CCost::", getCost);
 
-      if (getCost === undefined || getCost === null) {
-        console.error("Failed to retrieve adjusted order cost");
+      const orderData = {
+        shop_id: selectedShop.id,
+        user_name: loggedUser,
+        status: "Pending",
+        total_price: adjustedCost,
+        items: selectedItems.map(item => ({
+          item_id: item.id,
+          quantity: item.orderQty,
+          item_expenses: item.itemExpenses || 0,
+        })),
+      };
 
-        return;
-      }
-      if (editingOrderId !== null) {
-        console.log("Shop");
-
-        const updatedOrders = orders.map((order) =>
-          order.id === editingOrderId
-            ? {
-                ...order,
-                shop: selectedShop.shopName,
-                date: new Date().toLocaleDateString(),
-                items: selectedItems.filter((item) => item.orderQty > 0),
-                total_price: getCost,
-              }
-            : order
+      if (editingOrderId) {
+        const response = await api.put(
+          `/orders/${editingOrderId}`,
+          orderData
         );
-        console.log("SelectedShop : ", afterShopSelected);
-        console.log("SelectedShop ID: ", afterShopSelected.id);
-        const updatedOrder = {
-          ...orders.find((o) => o.id === editingOrderId),
-          shop_id: afterShopSelected?.id ?? 0,
-          // shop: afterShopSelected.shopName,
-          date: new Date().toLocaleDateString(),
-          user_name: loggedUser,
-          status: "Pending",
-          total_price: getCost,
-          items: selectedItems
-            //.filter((item) => item.orderQty > 0)
-            .map((item) => ({
-              item_id: item.id,
-              item: item.item,
-              unitPrice: item.unitPrice,
-              order_id: editingOrderId,
-              quantity: item.orderQty,
-              item_expenses: item.itemExpenses || 0,
-            })),
-        };
-        setOrders(updatedOrders);
-        setOrderToEdit(updatedOrder);
-        setCurrentInvoiceItems(updatedOrder.items);
-        console.log("editID: ", editingOrderId);
-        if (!editingOrderId || editingOrderId <= 0) {
-          console.log("Invalid editingOrderId:", editingOrderId);
-          return;
-        }
-        try {
-          console.log("updated Order: ", updatedOrder);
-
-          const response = await axios.put(
-            `http://127.0.0.1:8000/api/orders/${editingOrderId}`,
-            updatedOrder,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${userToken}`,
-              },
-            }
-          );
-          console.log("Edit : ", response.data);
-        } catch (error) {
-          console.error("Error upfating order: ", error);
-        }
+        setOrders(orders.map(order => 
+          order.id === editingOrderId ? response.data : order
+        ));
+        setOrderToEdit(response.data);
+        setCurrentInvoiceItems(response.data.items || []);
         setEditingOrderId(null);
       } else {
-        console.log("papapap", afterShopSelected);
-
-        const newOrder = {
-          // id: orders.length + 1,
-          shop_id: afterShopSelected.id,
-          // created_at: new Date().toLocaleDateString(),
-          user_name: loggedUser,
-          status: "Pending",
-          //return_balance: getCost,
-          items: selectedItems
-            //.filter((item) => item.orderQty > 0)
-            .map((item) => ({
-              item_id: item.id,
-              quantity: item.orderQty,
-              item_expenses: item.itemExpenses || 0,
-            })),
-          total_price: getCost,
-        };
-        console.log(getCost);
-        console.log(selectedShop.id);
-        console.log(selectedShop);
-        // afterShopSelect = selectedShop;
-        console.log("koo", newOrder);
-
-        //store in DB
-        try {
-          console.log(userToken);
-
-          const controller = new AbortController();
-
-          const response = await axios.post(
-            "http://127.0.0.1:8000/api/orders",
-            newOrder,
-            {
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${userToken}`,
-              },
-              //withCredentials: true,
-            }
-            // body: JSON.stringify(newOrder),
-          );
-          console.log("response: " + response);
-
-          if (!response.data) {
-            throw new Error(
-              `Server responded with ${response.status}:${
-                response.status
-              }:${await response.data}`
-            );
-          }
-          if (response.status === 200 || response.status === 201) {
-            const data = await response.data;
-            console.log("Order saved:", data.order);
-            console.log("Items saved:", data.order.items);
-            //setOrders([...orders, newOrder]);
-            setOrders((prevOrders) => [
-              ...prevOrders,
-              { ...data.order, items: data.order.items || [] },
-            ]);
-            setOrderToEdit({ ...data.order, items: data.order.items || [] });
-            setCurrentInvoiceItems(data.order.items || []);
-
-            // setOrders((orders) => [...orders, newOrder]);
-            // setOrderToEdit({ ...data.order, items: data.order.items || [] });
-            // setCurrentInvoiceItems(data.items);
-          } else {
-            throw new Error(`Unexpected status code:${response.status}`);
-          }
-        } catch (error) {
-          console.error("Error saving order:", error);
-        }
+        const response = await api.post('/orders', orderData);
+        setOrders([...orders, response.data]);
+        setOrderToEdit(response.data);
+        setCurrentInvoiceItems(response.data.items || []);
       }
+
+      setShowItemsModal(false);
+      setSelectedShop(null);
+      setSelectedItems([]);
     } catch (error) {
       console.error("Error saving order:", error);
+    }
+  };
+
+  // Calculate adjusted cost
+  const checkAdjustedOrderCost = async (shopId, orderAmount) => {
+    try {
+      const response = await api.get(
+        `/calculate-order-cost/${shopId}/${orderAmount}`
+      );
+      return response.data.return_balance ?? orderAmount;
+    } catch (error) {
+      console.error("Error calculating order cost", error);
+      return orderAmount;
+    }
+  };
+
+  // Cancel order
+  const handleCancelOrder = () => {
+    if (editingOrderId) {
+      const originalOrder = orders.find(order => order.id === editingOrderId);
+      setOrderToEdit(originalOrder);
+      setEditingOrderId(null);
     }
     setShowItemsModal(false);
     setSelectedShop(null);
     setSelectedItems([]);
   };
 
-  const checkAdjustedOrderCost = async (shopId, orderAmount) => {
-    try {
-      console.log("id", shopId);
-
-      const response = await axios.get(
-        `http://127.0.0.1:8000/api/calculate-order-cost/${shopId}/${orderAmount}`,
-        { withCredentials: true }
-      );
-      const data = response.data;
-      console.log("respons: ", data.return_balance);
-      console.log("kooo");
-
-      return data.return_balance ?? orderAmount;
-    } catch (error) {
-      console.error("Error fetching order cost", error);
-      return orderAmount;
-    }
-  };
-
-  const handleCancelOrder = () => {
-    if (editingOrderId !== null) {
-      // Show the Order to Edit modal if updating
-      const originalOrder = orders.find((order) => order.id === editingOrderId);
-      setOrderToEdit(originalOrder); // Show confirmed order
-      setEditingOrderId(null);
-      setShowItemsModal(false); // Close items modal
-    } else {
-      // Navigate to the initial Orders page when adding a new order
-      navigate("/adminOrders");
-      setShowItemsModal(false);
-      setSelectedShop(null);
-      setSelectedItems([]);
-    }
-  };
-
-  const handleGenerateInvoice = () => {
-    setShowPopup(true);
-  };
-
+  // Edit order
   const handleEditOrder = () => {
     if (orderToEdit) {
-      const originalOrder = orderToEdit;
       setAfterShopSelected({
-        id: originalOrder.shop_id,
-        shopName: originalOrder.shop,
+        id: orderToEdit.shop_id,
+        shopName: orderToEdit.shop,
       });
-      setSelectedShop({ shopName: originalOrder.shop });
-      setSelectedItems(originalOrder.items);
-      setEditingOrderId(originalOrder.id); // set edit mode
+      setSelectedShop({ 
+        id: orderToEdit.shop_id,
+        shopName: orderToEdit.shop 
+      });
+      setSelectedItems(orderToEdit.items.map(item => ({
+        ...item,
+        orderQty: item.quantity
+      })));
+      setEditingOrderId(orderToEdit.id);
       setOrderToEdit(null);
       setShowItemsModal(true);
     }
+  };
+
+  // Pagination
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Invoice generation
+  const handleGenerateInvoice = () => {
+    setShowPopup(true);
   };
 
   const handlePrint = () => {
@@ -446,7 +243,7 @@ const Orders = () => {
     });
   };
 
-  //subtotal
+  // Invoice calculations
   const subTotal = currentInvoiceItems.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
     0
@@ -477,127 +274,119 @@ const Orders = () => {
           </button>
         </div>
 
-        <div className="orders-table-container">
-          <table className="tableO">
-            <thead>
-              <tr>
-                <th>Shop</th>
-                <th>Date</th>
-                <th>Rep Name</th>
-                <th>Status</th>
-                <th>Items</th>
-                <th className="text-center" colSpan="3">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders?.length > 0 ? (
-                orders.map((order) => (
-                  <tr key={order.id}>
-                    <td>{order.shop_id}</td>
-                    <td>{order.created_at}</td>
-                    <td>{order.user_name}</td>
-                    <td>{order.status}</td>
-                    <td>
-                      {order.items
-                        ? order.items
-                            .map((i) => `${i.item} (${i.orderQty})`)
-                            .join(", ")
-                        : "—"}
-                    </td>
-                    <td>
-                      {" "}
-                      <button
-                        className="btn view-btn"
-                        onClick={() => handleViewOrder(order)}
-                      >
-                        View
-                      </button>
-                    </td>
-
-                    <td>
-                      {order.items
-                        ? order.items
-                            .map((i) => `${i.item} (${i.orderQty})`)
-                            .join(", ")
-                        : "—"}
-                    </td>
-                    {/* <td>
-                      <button className="btn view-btn">View</button>
-                    </td> */}
-                    <td>
-                      <button
-                        className="btn accept-btn"
-                        onClick={() => handleStatusChange(order.id, "Accepted")}
-                      >
-                        Accept
-                      </button>
-                    </td>
-                    <td>
-                      <button
-                        className="btn cancel-btn"
-                        onClick={() =>
-                          handleStatusChange(order.id, "Cancelled")
-                        }
-                      >
-                        Cancel
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
+        {loading ? (
+          <div className="loading">Loading orders...</div>
+        ) : error ? (
+          <div className="error">{error}</div>
+        ) : (
+          <div className="orders-table-container">
+            <table className="tableO">
+              <thead>
                 <tr>
-                  <td colSpan="8">No Orders available</td>
+                  <th>Shop</th>
+                  <th>Date</th>
+                  <th>Rep Name</th>
+                  <th>Status</th>
+                  <th>Items</th>
+                  <th className="text-center" colSpan="3">
+                    Actions
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {currentOrders.length > 0 ? (
+                  currentOrders.map((order) => (
+                    <tr key={order.id}>
+                      <td>{order.shop_id}</td>
+                      <td>{order.created_at}</td>
+                      <td>{order.user_name}</td>
+                      <td>{order.status}</td>
+                      <td>
+                        {order.items
+                          ? order.items
+                              .map((i) => `${i.item} (${i.quantity})`)
+                              .join(", ")
+                          : "—"}
+                      </td>
+                      <td>
+                        <button
+                          className="btn view-btn"
+                          onClick={() => handleViewOrder(order)}
+                        >
+                          View
+                        </button>
+                      </td>
+                      <td>
+                        <button
+                          className="btn accept-btn"
+                          onClick={() => handleStatusChange(order.id, "Accepted")}
+                        >
+                          Accept
+                        </button>
+                      </td>
+                      <td>
+                        <button
+                          className="btn cancel-btn"
+                          onClick={() => handleStatusChange(order.id, "Cancelled")}
+                        >
+                          Cancel
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8">No Orders available</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
 
-          <div className="pagination-container-O">
-            <ul className="pagination-O">
-              <li
-                className={`page-item-O ${currentPage === 1 ? "disabled" : ""}`}
-              >
-                <button
-                  className="page-link"
-                  onClick={() => paginate(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  &lt;
-                </button>
-              </li>
-              {[...Array(totalPages).keys()].map((number) => (
+            <div className="pagination-container-O">
+              <ul className="pagination-O">
                 <li
-                  key={number + 1}
-                  className={`page-item ${
-                    currentPage === number + 1 ? "active" : ""
+                  className={`page-item-O ${currentPage === 1 ? "disabled" : ""}`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    &lt;
+                  </button>
+                </li>
+                {[...Array(totalPages).keys()].map((number) => (
+                  <li
+                    key={number + 1}
+                    className={`page-item ${
+                      currentPage === number + 1 ? "active" : ""
+                    }`}
+                  >
+                    <button
+                      className="page-link-O"
+                      onClick={() => paginate(number + 1)}
+                    >
+                      {number + 1}
+                    </button>
+                  </li>
+                ))}
+                <li
+                  className={`page-item-O ${
+                    currentPage === totalPages ? "disabled" : ""
                   }`}
                 >
                   <button
                     className="page-link-O"
-                    onClick={() => paginate(number + 1)}
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
                   >
-                    {number + 1}
+                    &gt;
                   </button>
                 </li>
-              ))}
-              <li
-                className={`page-item-O ${
-                  currentPage === totalPages ? "disabled" : ""
-                }`}
-              >
-                <button
-                  className="page-link-O"
-                  onClick={() => paginate(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  &gt;
-                </button>
-              </li>
-            </ul>
+              </ul>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* View Order Popup */}
@@ -606,8 +395,6 @@ const Orders = () => {
           <div className="Modal">
             <h2>Order Details</h2>
             <div className="ScrollableContent">
-              {" "}
-              {/* Add this wrapper */}
               <div className="orderdetails">
                 <div className="orderdetails1">
                   <p>
@@ -642,9 +429,7 @@ const Orders = () => {
                       <td>{item.item}</td>
                       <td>{item.quantity}</td>
                       <td>
-                        {(item.quantity * parseFloat(item.unitPrice)).toFixed(
-                          2
-                        )}
+                        {(item.quantity * parseFloat(item.unitPrice)).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -665,9 +450,9 @@ const Orders = () => {
             <h2>Select Shop</h2>
             <div className="ScrollableContent">
               <div className="ShopsGrid">
-                {shops.map((shop, index) => (
+                {shops.map((shop) => (
                   <div
-                    key={index}
+                    key={shop.id}
                     className="ShopCard"
                     onClick={() => handleShopSelect(shop)}
                   >
@@ -699,15 +484,15 @@ const Orders = () => {
       {showItemsModal && (
         <div className="ModalBackdrop">
           <div className="Modal">
-            <h2>Select Items for {selectedShop?.shopName}</h2>
+            <h2>Select Items for {selectedShop?.shop_name}</h2>
             <div className="ScrollableContent">
               <div className="DistributionStockGrid">
-                {items.map((item, index) => {
+                {items.map((item) => {
                   const selected = selectedItems.find(
                     (i) => i.item === item.item
                   );
                   return (
-                    <div key={index} className="DistributionItemCard">
+                    <div key={item.id} className="DistributionItemCard">
                       <h2>{item.item}</h2>
                       <div className="DistributionItemCardMiddle">
                         <ShoppingCartIcon className="DistributionItemCardIcon" />
@@ -725,6 +510,7 @@ const Orders = () => {
                               <input
                                 type="number"
                                 min="1"
+                                max={item.quantity}
                                 className="QtyInput"
                                 value={selected.orderQty}
                                 onChange={(e) =>
@@ -735,7 +521,9 @@ const Orders = () => {
                                 className="RemoveItemBtn"
                                 title="Remove item"
                                 onClick={() => removeSelectedItem(item.item)}
-                              ></button>
+                              >
+                                ×
+                              </button>
                             </div>
                           ) : (
                             <button
@@ -756,7 +544,11 @@ const Orders = () => {
               <button className="CancelButton" onClick={handleCancelOrder}>
                 Cancel
               </button>
-              <button className="ConfirmButton" onClick={handleConfirmOrder}>
+              <button 
+                className="ConfirmButton" 
+                onClick={handleConfirmOrder}
+                disabled={selectedItems.length === 0}
+              >
                 {editingOrderId ? "Update Order" : "Confirm"}
               </button>
             </div>
@@ -769,7 +561,7 @@ const Orders = () => {
         <div className="ModalBackdrop">
           <div className="Modal">
             <div className="abc">
-              <span class="order-number">Order</span>
+              <span className="order-number">Order</span>
             </div>
             <table className="confirmedOrderTable">
               <thead>
@@ -781,13 +573,13 @@ const Orders = () => {
                 </tr>
               </thead>
               <tbody>
-                {orderToEdit?.items?.length > 0 ? (
-                  orderToEdit.items.map((item, index) => (
-                    <tr key={index}>
+                {orderToEdit.items?.length > 0 ? (
+                  orderToEdit.items.map((item) => (
+                    <tr key={item.id}>
                       <td>{item.item}</td>
                       <td>{item.quantity}</td>
                       <td>{item.unitPrice}</td>
-                      <td>{item.quantity * item.unitPrice}</td>
+                      <td>{(item.quantity * item.unitPrice).toFixed(2)}</td>
                     </tr>
                   ))
                 ) : (
@@ -800,7 +592,7 @@ const Orders = () => {
             <div className="Action">
               <button onClick={handleEditOrder}>Edit Order</button>
               <button onClick={handleGenerateInvoice}>Generate Invoice</button>
-              <button onClick={() => setOrderToEdit(false)}>Cancel</button>
+              <button onClick={() => setOrderToEdit(null)}>Close</button>
             </div>
           </div>
         </div>
@@ -814,12 +606,12 @@ const Orders = () => {
               <div className="invoice-header">
                 <img src={logo} alt="Invoice Logo" className="invoice-logo" />
                 <div>
-                  <h2>{selectedShop?.shopName}</h2>
+                  <h2>{orderToEdit?.shop || "Shop Name"}</h2>
                   <p>{new Date().toLocaleDateString()}</p>
                 </div>
                 <div className="invoice-number">
                   <h2>Invoice</h2>
-                  <p>Order ID</p>
+                  <p>#{orderToEdit?.id || "0000"}</p>
                 </div>
               </div>
               <table>
@@ -832,12 +624,12 @@ const Orders = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentInvoiceItems.map((item, index) => (
-                    <tr key={index}>
+                  {currentInvoiceItems.map((item) => (
+                    <tr key={item.id}>
                       <td>{item.item}</td>
                       <td>{item.quantity}</td>
                       <td>Rs. {item.unitPrice}</td>
-                      <td>Rs. {item.quantity * item.unitPrice}</td>
+                      <td>Rs. {(item.quantity * item.unitPrice).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
