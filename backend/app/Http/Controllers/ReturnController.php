@@ -275,18 +275,68 @@ class ReturnController extends Controller
     //         'total_return_cost'=>$totalReturnCost,
     //         'returns'=>$returnData
     //     ]);
-    // }
-    public function show($returnId)
-    {
-        $return = Returns::with(['shop','returnItems.item'])
+public function show($returnId)
+{
+    try {
+        $return = Returns::with(['shop', 'returnItems.item'])
                     ->findOrFail($returnId);
+                    
         return response()->json([
-            'message'=> 'Return details retrieved successfully',
-            'data'=> $return
+            'success' => true,
+            'message' => 'Return details retrieved successfully',
+            'data' => $return
         ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to retrieve return details',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
-    public function index()
+public function goodReturns()
+{
+    return $this->getReturnsByType('good');
+}
+
+public function badReturns()
+{
+    return $this->getReturnsByType('bad');
+}
+
+protected function getReturnsByType($type)
+{
+    try {
+        $returns = Returns::with(['shop', 'returnItems.item'])
+            ->where('type', $type)
+            ->get()
+            ->map(function ($return) {
+                return [
+                    'id' => $return->id,
+                    'shop_name' => $return->shop->name ?? 'Unknown Shop',
+                    'created_at' => $return->created_at,
+                    'return_cost' => $return->return_cost,
+                    // Include other necessary fields
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $returns
+        ]);
+        
+    } catch (\Exception $e) {
+        \Log::error("Error fetching $type returns: " . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Server error'
+        ], 500);
+    }
+}
+
+public function index()
     {
         $return = Returns::with(['shop','returnItems'])->get();
         return response()->json([

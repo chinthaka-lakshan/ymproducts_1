@@ -4,37 +4,99 @@ import RepSideBar from '../../components/Sidebar/RepSidebar/RepSidebar';
 import RepNavbar from '../../components/RepNavbar/RepNavbar';
 import SearchIcon from '@mui/icons-material/Search';
 import { Switch, FormControlLabel } from '@mui/material';
+import api from '../../api/axios';
+import { useNavigate } from 'react-router-dom';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 
 const RepReturns = () => {
-  const [goodReturns, setGoodReturns] = useState([
-    { id: 1, shop_name: 'A Shop', created_at: '3/4/2027', return_cost: 1500.00 },
-    { id: 2, shop_name: 'B Shop', created_at: '13/4/2025', return_cost: 2500.00 },
-    { id: 3, shop_name: 'Dilshan Shop', created_at: '3/4/2025', return_cost: 1800.00 },
-  ]);
-
-  const [badReturns, setBadReturns] = useState([
-    { id: 101, shop_name: 'X Shop', created_at: '4/5/2025', return_cost: 1000.00 },
-    { id: 102, shop_name: 'Y Shop', created_at: '6/5/2025', return_cost: 2000.00 },
-    { id: 103, shop_name: 'Z Shop', created_at: '7/5/2025', return_cost: 500.00 },
-  ]);
-
+  const [goodReturns, setGoodReturns] = useState([]);
+  const [badReturns, setBadReturns] = useState([]);
   const [showGoodReturns, setShowGoodReturns] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [alert, setAlert] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+  const navigate = useNavigate();
 
+  // Fetch returns from backend
+  useEffect(() => {
+// In your fetchReturns function, ensure data is properly formatted
+// In your fetchReturns function, ensure data is properly formatted
+const fetchReturns = async () => {
+  try {
+    setLoading(true);
+    const [goodRes, badRes] = await Promise.all([
+      api.get('/returns/good').catch(e => {
+        console.error('Good returns error:', e.response?.data);
+        throw e;
+      }),
+      api.get('/returns/bad').catch(e => {
+        console.error('Bad returns error:', e.response?.data); 
+        throw e;
+      })
+    ]);
+    
+    const processReturns = (returns) => {
+      return returns.data.data.map(rtn => ({
+        ...rtn,
+        return_cost: Number(rtn.return_cost) || 0,
+        shop_name: rtn.shop_name || rtn.shop?.name || 'Unknown Shop'
+      }));
+    };
+    
+    setGoodReturns(processReturns(goodRes));
+    setBadReturns(processReturns(badRes));
+    setError(null);
+  } catch (err) {
+    console.error('API Error:', err.response?.data || err.message);
+    setError(err.response?.data?.message || 'Failed to load returns');
+    showAlert(
+      err.response?.data?.message || 'Server error occurred', 
+      'error'
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+    fetchReturns();
+  }, []);
+
+  // Alert helpers
+  const showAlert = (message, severity = 'success') => {
+    setAlert({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  const handleCloseAlert = () => {
+    setAlert(prev => ({ ...prev, open: false }));
+  };
+
+  // Handle view return details
+  const handleViewReturn = (returnId) => {
+    navigate(`/returns/${returnId}`);
+  };
+
+  // Filter and sort returns
   const returnsToFilter = showGoodReturns ? goodReturns : badReturns;
 
   const filteredReturns = returnsToFilter
-    .sort((a, b) => {
-      const dateA = new Date(a.created_at.split('/').reverse().join('/'));
-      const dateB = new Date(b.created_at.split('/').reverse().join('/'));
-      return dateB - dateA;
-    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .filter(rtn =>
       rtn.created_at.toLowerCase().includes(searchQuery.toLowerCase()) ||
       rtn.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       rtn.return_cost.toString().includes(searchQuery)
     );
 
+  // Sidebar logic
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarRef = useRef();
 
@@ -53,10 +115,11 @@ const RepReturns = () => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Pagination logic
   const [currentPage, setCurrentPage] = useState(1);
   const [returnsPerPage, setReturnsPerPage] = useState(window.innerWidth <= 768 ? 10 : 6);
 
@@ -121,66 +184,112 @@ const RepReturns = () => {
             </div>
 
             <div className="RepReturnsTableScroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Shop</th>
-                    <th className="HideTab">Total (LKR)</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentReturns.map(rtn => (
-                    <tr key={rtn.id}>
-                      <td>{rtn.created_at}</td>
-                      <td>{rtn.shop_name}</td>
-                      <td className="HideTab">{rtn.total_price}</td>
-                      <td><button className="ReturnTableViewButton">View</button></td>
+              {loading ? (
+                <div className="RepReturnsLoading">
+                  <p>Loading returns...</p>
+                </div>
+              ) : error ? (
+                <div className="RepReturnsError">
+                  <p>{error}</p>
+                </div>
+              ) : currentReturns.length === 0 ? (
+                <div className="RepReturnsEmpty">
+                  <p>No returns found</p>
+                </div>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Shop</th>
+                      <th className="HideTab">Total (LKR)</th>
+                      <th>Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="pagination-container-rep">
-              <button 
-                className="pagination-arrow-rep" 
-                onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
-                disabled={currentPage === 1}
-              >
-                &lt;
-              </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => paginate(i + 1)}
-                  className={`pagination-number-rep ${currentPage === i + 1 ? 'active' : ''}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              {totalPages > 5 && (
-                <>
-                  <button className="pagination-ellipsis-rep">...</button>
-                  <button 
-                    className="pagination-number-rep"
-                    onClick={() => paginate(totalPages)}
-                  >
-                    {totalPages}
-                  </button>
-                </>
+                  </thead>
+                  <tbody>
+                    {currentReturns.map(rtn => (
+                      <tr key={rtn.id}>
+                        <td>{rtn.created_at ? new Date(rtn.created_at).toLocaleDateString() : 'N/A'}</td>
+                        
+                        <td>{rtn.shop_name || 'Unknown Shop'}</td>
+                        <td className="HideTab">
+                          {typeof rtn.return_cost === 'number' 
+                            ? rtn.return_cost.toFixed(2)
+                            : (parseFloat(rtn.return_cost) || 0).toFixed(2)}
+                        </td>
+                        <td>
+                          <button 
+                            className="ReturnTableViewButton"
+                            onClick={() => handleViewReturn(rtn.id)}
+                            disabled={!rtn.id}
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
-              <button 
-                className="pagination-arrow-rep" 
-                onClick={() => paginate(currentPage < totalPages ? currentPage + 1 : totalPages)}
-                disabled={currentPage === totalPages}
-              >
-                &gt;
-              </button>
             </div>
+            
+            {!loading && !error && filteredReturns.length > 0 && (
+              <div className="pagination-container-rep">
+                <button 
+                  className="pagination-arrow-rep" 
+                  onClick={() => paginate(currentPage > 1 ? currentPage - 1 : 1)}
+                  disabled={currentPage === 1}
+                >
+                  &lt;
+                </button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => paginate(i + 1)}
+                    className={`pagination-number-rep ${currentPage === i + 1 ? 'active' : ''}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                {totalPages > 5 && (
+                  <>
+                    <button className="pagination-ellipsis-rep">...</button>
+                    <button 
+                      className="pagination-number-rep"
+                      onClick={() => paginate(totalPages)}
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+                <button 
+                  className="pagination-arrow-rep" 
+                  onClick={() => paginate(currentPage < totalPages ? currentPage + 1 : totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  &gt;
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Alert Snackbar */}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseAlert} 
+          severity={alert.severity}
+          sx={{ width: '100%' }}
+        >
+          {alert.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

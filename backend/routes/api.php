@@ -37,7 +37,9 @@ Route::get('returns/{shopId}/balance',[ReturnController::class,'getReturnBalance
  Route::post('returns/{returnId}/items',[ReturnController::class,'store']);
  Route::put('returns/{returnId}/items/{itemId"',[ReturnController::class,'getReturnItems']);
 Route::delete('returns/{returnId}/items/{itemId}',[ReturnController::class, 'removeReturn']);
- Route::apiResource('returns',ReturnController::class)->except(['index']);
+Route::get('returns/good', [ReturnController::class, 'goodReturns']);
+Route::get('returns/bad', [ReturnController::class, 'badReturns']);
+Route::apiResource('returns', ReturnController::class)->except(['index']);
 
  Route::get('/shops/{shop}/return-balance', [ShopController::class, 'getReturnBalance']);
 Route::put('/shops/{shop}/return-balance', [ShopController::class, 'updateReturnBalance']);
