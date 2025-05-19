@@ -180,7 +180,6 @@
 .go-btn-O {
   background-color: #f8f9fa;
 }
-
 .ModalBackdrop {
   position: fixed;
   top: 0;
@@ -190,40 +189,41 @@
   background: rgba(0, 0, 0, 0.5);
   z-index: 999;
   display: flex;
-  justify-content: center;
+  justify-content:flex-start;
   align-items: center;
 }
+.Modal h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.ScrollableContent {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 0;
+}
+
 
 .Modal {
   display: flex;
   flex-direction: column;
-  width: 60%;
-  height: 80%;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90%;
   background: whitesmoke;
   border-radius: 20px;
   box-shadow: 4px 6px 20px rgba(0, 0, 0, 0.15);
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1000;
-  gap: 30px;
   padding: 20px;
   overflow: hidden;
+  position: relative;
+  z-index: 1000;
 }
 
-.ScrollableContent {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 10px 20px;
-}
+
 
 .Modal h2 {
-  font-size: 35px;
+  font-size: 45px;
   color: #616161;
   margin-top: -20px;
 }

@@ -397,24 +397,15 @@ const Orders = () => {
             <div className="ScrollableContent">
               <div className="orderdetails">
                 <div className="orderdetails1">
-                  <p>
-                    <strong>Date:</strong> {viewingOrder.created_at}
-                  </p>
-                  <div className="repname">
-                    <p>
-                      <strong>Rep Name:</strong> {viewingOrder.user_name}
-                    </p>
-                  </div>
+                  <p><strong>Date:</strong> {viewingOrder.created_at}</p>
+                  <p><strong>Rep Name:</strong> {viewingOrder.user_name}</p>
                 </div>
                 <div className="orderdetails2">
-                  <p>
-                    <strong>Shop Name:</strong> {viewingOrder.shop_id}
-                  </p>
-                  <p>
-                    <strong>Total Amount:</strong> Rs.{viewingOrder.total_price}
-                  </p>
+                  <p><strong>Shop Name:</strong> {viewingOrder.shop}</p>
+                  <p><strong>Total Amount:</strong> Rs.{viewingOrder.total_price}</p>
                 </div>
               </div>
+
               <table className="customtable">
                 <thead>
                   <tr>
