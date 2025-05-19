@@ -52,7 +52,7 @@
   font-weight: 600;
 }
 
-form {
+.RepRegorm {
   width: 60%;
   display: flex;
   flex-direction: column;
