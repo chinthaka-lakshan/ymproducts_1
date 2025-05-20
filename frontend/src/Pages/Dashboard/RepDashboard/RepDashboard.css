@@ -554,9 +554,9 @@ th{
   }
 
   .RepButtonsContainer {
-    display: flex;
+    display: flex !important;
     flex-direction: column !important;
-    height: 80%;
+    height: 80% !important;
     margin-top: 10%;
   }
 
