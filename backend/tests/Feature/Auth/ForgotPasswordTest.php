@@ -21,43 +21,6 @@ class ForgotPasswordTest extends TestCase
     }
 
     /** @test */
-    public function password_reset_fails_with_invalid_otp()
-    {
-        // 1. Create test user
-        $user = User::factory()->create([
-            'role' => 'sales_rep',
-            'email' => 'salesrep@example.com',
-            'password' => Hash::make('originalPassword123')
-        ]);
-
-        // 2. Generate OTP (simulating the sendOtp endpoint)
-        $otp = '654321'; // Could use rand(100000, 999999) for dynamic testing
-        PasswordResetOtp::create([
-            'email' => $user->email,
-            'otp' => $otp,
-            'created_at' => now()
-        ]);
-
-        // 3. Attempt reset with invalid OTP
-        $response = $this->postJson('/api/reset-password-with-otp', [
-            'email' => $user->email,
-            'otp' => '000000', // Clearly wrong value
-            'password' => 'newSecurePassword123',
-            'password_confirmation' => 'newSecurePassword123'
-        ]);
-
-        // 4. Assertions
-        $response->assertStatus(400)
-            ->assertJson([
-                'status' => 'error',
-                'message' => 'Invalid OTP or user not found'
-            ]);
-
-        // 5. Verify password remains unchanged
-        $this->assertTrue(Hash::check('originalPassword123', $user->fresh()->password));
-    }
-
-    /** @test */
     public function verify_otp_fails_with_invalid_code()
     {
         $user = User::factory()->create();

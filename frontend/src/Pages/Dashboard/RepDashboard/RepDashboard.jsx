@@ -393,28 +393,91 @@ const RepDashboard = () => {
 
         {/* Return Type Modal */}
         {showReturnModal && (
-          <div className="ModalBackdrop">
-            <div className="Modal">
-              <h2 className="ModalTitle">Select Return Type</h2>
-              <div className="ReturnButtonsContainer">
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              background: "rgba(0, 0, 0, 0.5)",
+              zIindex: 1999,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "white",
+                borderRadius: "10px",
+                padding: "20px",
+                width: "60%",
+                height: "80%",
+                boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+            >
+              <h2 style={{ marginBottom: "20px", fontSize: "1.5rem" }}>
+                Select Return Type
+              </h2>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-around",
+                  marginBottom: "20px",
+                }}
+              >
                 <div
-                  className="ReturnButton"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "1px solid #ccc",
+                    width: "300px",
+                  }}
                   onClick={() => handleReturnTypeSelect(true)}
                 >
-                  <img src={GoodReturnIcon} alt="Good Return" />
-                  <p>Good Return</p>
+                  <img
+                    src={GoodReturnIcon}
+                    alt="Good Return"
+                    style={{ width: "300px", height: "300px", marginBottom: "10px" }}
+                  />
+                  <p style={{ margin: 0, color: "GrayText", fontSize: "30px" }}>Good Return</p>
                 </div>
                 <div
-                  className="ReturnButton"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "1px solid #ccc",
+                    width: "300px",
+                  }}
                   onClick={() => handleReturnTypeSelect(false)}
                 >
-                  <img src={BadReturnIcon} alt="Bad Return" />
-                  <p>Bad Return</p>
+                  <img
+                    src={BadReturnIcon}
+                    alt="Bad Return"
+                    style={{ width: "300px", height: "300px", marginBottom: "10px" }}
+                  />
+                  <p style={{ margin: 0, color: "GrayText", fontSize: "30px" }}>Bad Return</p>
                 </div>
               </div>
-              <div className="ModalButtons">
+              <div>
                 <button
-                  className="CancelButton"
+                  style={{
+                    backgroundColor: "#ccc",
+                    padding: "10px 20px",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
                   onClick={() => setShowReturnModal(false)}
                 >
                   Cancel
