@@ -10,6 +10,9 @@ import StoreFrontIcon from "@mui/icons-material/Store";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import SearchIcon from "@mui/icons-material/Search";
 import api from "../../../api/axios"; // Using the centralized axios instance
+import logo from "../../../assets/YM.png";
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 const RepDashboard = () => {
   // State management
@@ -31,7 +34,12 @@ const RepDashboard = () => {
   const [showShopsModal, setShowShopsModal] = useState(false);
   const [showItemsModal, setShowItemsModal] = useState(false);
 
+  const [showPopup, setShowPopup] = useState(false);
+  const [invoiceData, setInvoiceData] = useState(null);
+
   const sidebarRef = useRef();
+  const invoiceRef = useRef();
+
   const username = localStorage.getItem("username");
 
   // Fetch data
@@ -86,20 +94,6 @@ const RepDashboard = () => {
     setShowShopsModal(true);
     setIsGood(isGoodReturn);
   };
-
-  // const handleShopSelect = async (shop) => {
-  //   setSelectedShop(shop);
-  //   try {
-  //     const response = await api.get(`/returns/${shop.id}`);
-  //     setReturnBalance(response.data.return_balance || 0);
-  //   } catch (error) {
-  //     console.error("Error fetching return balance", error);
-  //     setReturnBalance(0);
-  //   }
-  //   setShowShopsModal(false);
-  //   setSearchShopTerm("");
-  //   setShowItemsModal(true);
-  // };
 
   const handleShopSelect = async (shop) => {
     setSelectedShop(shop);
@@ -199,211 +193,72 @@ const RepDashboard = () => {
     };
   };
 
-  // const handleGenerateInvoice = async () => {
-  //   try {
-  //     const { subtotal, totalDiscount } = calculateTotals();
-
-  //     if (orderToEdit.isReturn) {
-  //       const returnRecord = {
-  //         shop_id: orderToEdit.shop.id,
-  //         type: orderToEdit.isGood ? "good" : "bad",
-  //         return_cost: subtotal,
-  //         rep_name: username,
-  //         items: orderToEdit.items.map((item) => ({
-  //           item_id: item.item.id,
-  //           quantity: item.orderQty,
-  //         })),
-  //       };
-
-  //       await api.post("/returns", returnRecord);
-  //       alert("Return created successfully");
-  //     } else {
-  //       const orderData = {
-  //         shop_id: orderToEdit.shop.id,
-  //         total_price: subtotal,
-  //         items: orderToEdit.items.map((item) => ({
-  //           item_id: item.item.id,
-  //           quantity: item.orderQty,
-  //           item_expenses: 0,
-  //         })),
-  //         user_name: username,
-  //         status: "Pending",
-  //         discount: totalDiscount,
-  //       };
-
-  //       const response = await api.post("/orders", orderData);
-  //       if (response != null) {
-  //         console.log(response.data);
-  //         alert("Order created successfully");
-  //       }
-  //       alert(response.data);
-  //     }
-
-  //     setOrderToEdit(null);
-  //   } catch (error) {
-  //     console.error("Error:", error);
-  //     alert(error.response?.data?.message || "An error occurred");
-  //   }
-  // };
-
-  // Render helper components
-
-  //work well
-  // const handleGenerateInvoice = async () => {
-  //   try {
-  //     const { subtotal, totalDiscount } = calculateTotals();
-
-  //     if (orderToEdit.isReturn) {
-  //       const returnRecord = {
-  //         shop_id: orderToEdit.shop.id,
-  //         type: orderToEdit.isGood ? "good" : "bad",
-  //         return_cost: subtotal,
-  //         rep_name: username,
-  //         items: orderToEdit.items.map((item) => ({
-  //           item_id: item.item.id,
-  //           quantity: item.orderQty,
-  //         })),
-  //       };
-
-  //       await api.post("/returns", returnRecord);
-  //       alert("Return created successfully");
-  //     } else {
-  //       const orderData = {
-  //         shop_id: orderToEdit.shop.id,
-  //         total_price: subtotal,
-  //         items: orderToEdit.items.map((item) => ({
-  //           item_id: item.item.id,
-  //           quantity: item.orderQty,
-  //           item_expenses: 0,
-  //         })),
-  //         user_name: username,
-  //         status: "Pending",
-  //         discount: totalDiscount,
-  //       };
-
-  //       const response = await api.post("/orders", orderData);
-  //       alert("Order created successfully");
-  //     }
-
-  //     setOrderToEdit(null);
-  //   } catch (error) {
-  //     console.error("Error:", error);
-  //     alert(
-  //       error.response?.data?.message ||
-  //         error.response?.data?.error ||
-  //         "An error occurred"
-  //     );
-  //   }
-  // };
-  ////worked 3
-  // const handleGenerateInvoice = async () => {
-  //   try {
-  //     const { subtotal, totalDiscount } = calculateTotals();
-
-  //     if (orderToEdit.isReturn) {
-  //       // Return creation logic remains the same
-  //       const returnRecord = {
-  //         shop_id: orderToEdit.shop.id,
-  //         type: orderToEdit.isGood ? "good" : "bad",
-  //         return_cost: subtotal,
-  //         rep_name: username,
-  //         items: orderToEdit.items.map((item) => ({
-  //           item_id: item.item.id,
-  //           quantity: item.orderQty,
-  //         })),
-  //       };
-
-  //       await api.post("/returns", returnRecord);
-  //       alert("Return created successfully");
-  //     } else {
-  //       // Calculate how much of the return balance to use
-  //       const returnBalanceToUse = Math.min(returnBalance, subtotal);
-  //       const remainingReturnBalance = returnBalance - returnBalanceToUse;
-  //       const finalAmountToPay = subtotal - returnBalanceToUse;
-
-  //       const orderData = {
-  //         shop_id: orderToEdit.shop.id,
-  //         total_price: finalAmountToPay,
-  //         items: orderToEdit.items.map((item) => ({
-  //           item_id: item.item.id,
-  //           quantity: item.orderQty,
-  //           item_expenses: 0,
-  //         })),
-  //         user_name: username,
-  //         status: "Pending",
-  //         discount: totalDiscount,
-  //         return_balance_used: returnBalanceToUse,
-  //         remaining_return_balance: remainingReturnBalance,
-  //       };
-
-  //       const response = await api.post("/orders", orderData);
-  //       alert("Order created successfully");
-  //     }
-
-  //     setOrderToEdit(null);
-  //   } catch (error) {
-  //     console.error("Error:", error);
-  //     alert(
-  //       error.response?.data?.message ||
-  //         error.response?.data?.error ||
-  //         "An error occurred"
-  //     );
-  //   }
-  // };
-
   const handleGenerateInvoice = async () => {
     try {
       const { subtotal, totalDiscount, grandTotal } = calculateTotals();
 
-      if (orderToEdit.isReturn) {
-        const returnRecord = {
-          shop_id: orderToEdit.shop.id,
-          type: orderToEdit.isGood ? "good" : "bad",
-          return_cost: subtotal,
-          rep_name: username,
-          items: orderToEdit.items.map((item) => ({
-            item_id: item.item.id,
-            quantity: item.orderQty,
-          })),
-        };
+      // Prepare invoice data
+      const invoiceItems = orderToEdit.items.map(item => ({
+        id: item.item.id,
+        item: item.item.item,
+        quantity: item.orderQty,
+        unitPrice: item.editedPrice !== undefined ? 
+                  parseFloat(item.editedPrice) : 
+                  parseFloat(item.unitPrice),
+      }));
 
-        await api.post("/returns", returnRecord);
-        alert("Return created successfully");
-      } else {
-        // Calculate how much of the return balance to use
-        const returnBalanceToUse = Math.min(returnBalance, grandTotal); // Use grandTotal instead of subtotal
-        const remainingReturnBalance = returnBalance - returnBalanceToUse;
-        const finalAmountToPay = grandTotal - returnBalanceToUse;
-
-        const orderData = {
-          shop_id: orderToEdit.shop.id,
-          total_price: finalAmountToPay, // This is now the final amount after all deductions
-          items: orderToEdit.items.map((item) => ({
-            item_id: item.item.id,
-            quantity: item.orderQty,
-            item_expenses: 0,
-          })),
-          user_name: username,
-          status: "Pending",
-          discount: totalDiscount,
-          return_balance_used: returnBalanceToUse,
-          remaining_return_balance: remainingReturnBalance,
-        };
-
-        const response = await api.post("/orders", orderData);
-        alert("Order created successfully");
-      }
-
-      setOrderToEdit(null);
-    } catch (error) {
-      console.error("Error:", error);
-      alert(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          "An error occurred"
+      const invoiceSubtotal = invoiceItems.reduce(
+        (sum, item) => sum + (item.quantity * item.unitPrice),
+        0
       );
+      
+      const invoiceDiscount = totalDiscount;
+      const invoiceTotal = invoiceSubtotal - invoiceDiscount;
+
+      setInvoiceData({
+        items: invoiceItems,
+        subtotal: invoiceSubtotal,
+        discount: invoiceDiscount,
+        total: invoiceTotal,
+        shop: orderToEdit.shop,
+        isReturn: orderToEdit.isReturn,
+        date: new Date().toLocaleDateString(),
+      });
+
+      // Show the invoice popup
+      setShowPopup(true);
+
+      // Don't clear orderToEdit yet - we want to keep it for reference
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      alert("Failed to generate invoice. Please try again.");
     }
   };
+
+  const handlePrint = () => {
+    const input = invoiceRef.current;
+    html2canvas(input).then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4'); // Fixed: using jsPDF instead of pdf
+      const imgWidth = 190;
+      const pageHeight = 290;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 10;
+
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save('invoice.pdf');
+    });
+  };
+
   const renderShopCards = () =>
     shops
       .filter((shop) =>
@@ -538,28 +393,91 @@ const RepDashboard = () => {
 
         {/* Return Type Modal */}
         {showReturnModal && (
-          <div className="ModalBackdrop">
-            <div className="Modal">
-              <h2 className="ModalTitle">Select Return Type</h2>
-              <div className="ReturnButtonsContainer">
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              background: "rgba(0, 0, 0, 0.5)",
+              zIindex: 1999,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "white",
+                borderRadius: "10px",
+                padding: "20px",
+                width: "60%",
+                height: "80%",
+                boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+            >
+              <h2 style={{ marginBottom: "20px", fontSize: "1.5rem" }}>
+                Select Return Type
+              </h2>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-around",
+                  marginBottom: "20px",
+                }}
+              >
                 <div
-                  className="ReturnButton"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "1px solid #ccc",
+                    width: "300px",
+                  }}
                   onClick={() => handleReturnTypeSelect(true)}
                 >
-                  <img src={GoodReturnIcon} alt="Good Return" />
-                  <p>Good Return</p>
+                  <img
+                    src={GoodReturnIcon}
+                    alt="Good Return"
+                    style={{ width: "300px", height: "300px", marginBottom: "10px" }}
+                  />
+                  <p style={{ margin: 0, color: "GrayText", fontSize: "30px" }}>Good Return</p>
                 </div>
                 <div
-                  className="ReturnButton"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "1px solid #ccc",
+                    width: "300px",
+                  }}
                   onClick={() => handleReturnTypeSelect(false)}
                 >
-                  <img src={BadReturnIcon} alt="Bad Return" />
-                  <p>Bad Return</p>
+                  <img
+                    src={BadReturnIcon}
+                    alt="Bad Return"
+                    style={{ width: "300px", height: "300px", marginBottom: "10px" }}
+                  />
+                  <p style={{ margin: 0, color: "GrayText", fontSize: "30px" }}>Bad Return</p>
                 </div>
               </div>
-              <div className="ModalButtons">
+              <div>
                 <button
-                  className="CancelButton"
+                  style={{
+                    backgroundColor: "#ccc",
+                    padding: "10px 20px",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
                   onClick={() => setShowReturnModal(false)}
                 >
                   Cancel
@@ -738,6 +656,71 @@ const RepDashboard = () => {
                   onClick={handleGenerateInvoice}
                 >
                   Generate Invoice
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showPopup && invoiceData && (
+          <div className="ModalBackdrop">
+            <div className="Modal">
+              <div className="invoice-content" ref={invoiceRef}>
+                <div className="invoice-header">
+                  <img src={logo} alt="invoice-logo" className="invoice-logo" />
+                  <div>
+                    <h2>{invoiceData.shop.shop_name}</h2>
+                    <p>{invoiceData.date}</p>
+                  </div>
+                  <div className="invoice-number">
+                    <h2>{invoiceData.isReturn ? "Return Invoice" : "Order Invoice"}</h2>
+                    <p>#{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</p>
+                  </div>
+                </div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Qty</th>
+                      <th>Unit Price</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoiceData.items.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.item}</td>
+                        <td>{item.quantity}</td>
+                        <td>Rs. {item.unitPrice.toFixed(2)}</td>
+                        <td>Rs. {(item.quantity * item.unitPrice).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="invoice-total">
+                  <p>Sub Total: Rs. {invoiceData.subtotal.toFixed(2)}</p>
+                  <p>Discount: Rs. {invoiceData.discount.toFixed(2)}</p>
+                  <p>
+                    <strong>Total: Rs. {invoiceData.total.toFixed(2)}</strong>
+                  </p>
+                </div>
+              </div>
+              <div className="InModalButtons">
+                <button 
+                  className="PrintButton" 
+                  onClick={handlePrint}
+                >
+                  Print Invoice
+                </button>
+                <button 
+                  className="close-btn" 
+                  onClick={() => {
+                    setShowPopup(false);
+                    setInvoiceData(null);
+                    setOrderToEdit(null); // Also clear the order
+                  }}
+                >
+                  Close
                 </button>
               </div>
             </div>

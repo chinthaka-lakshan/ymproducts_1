@@ -147,6 +147,19 @@ public function update(Request $request, $id)
         return response()->json($item);
     }
 
+
+    public function Item_lowStock()
+    {
+        // Define your threshold for low stock (e.g., less than 10kg)
+        $threshold = 10;
+        
+        $lowStockItems = Item::where('quantity', '<', $threshold)
+            ->orderBy('quantity', 'asc')
+            ->get();
+        
+        return response()->json($lowStockItems);
+    }
+
     public function addStock(Request $request, $id)
     {
         $item = Item::find($id);

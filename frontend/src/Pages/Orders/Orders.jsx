@@ -23,7 +23,6 @@ const Orders = () => {
   const [afterShopSelected, setAfterShopSelected] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
-  const [currentInvoiceItems, setCurrentInvoiceItems] = useState([]);
   const [orderToEdit, setOrderToEdit] = useState(null);
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -150,21 +149,16 @@ const Orders = () => {
       };
 
       if (editingOrderId) {
-        const response = await api.put(
-          `/orders/${editingOrderId}`,
-          orderData
-        );
+        const response = await api.put(`/orders/${editingOrderId}`, orderData);
         setOrders(orders.map(order => 
           order.id === editingOrderId ? response.data : order
         ));
         setOrderToEdit(response.data);
-        setCurrentInvoiceItems(response.data.items || []);
         setEditingOrderId(null);
       } else {
         const response = await api.post('/orders', orderData);
         setOrders([...orders, response.data]);
         setOrderToEdit(response.data);
-        setCurrentInvoiceItems(response.data.items || []);
       }
 
       setShowItemsModal(false);
@@ -244,10 +238,10 @@ const Orders = () => {
   };
 
   // Invoice calculations
-  const subTotal = currentInvoiceItems.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
+  const subTotal = orderToEdit?.items?.reduce(
+    (sum, item) => sum + (item.quantity * item.unitPrice),
     0
-  );
+  ) || 0;
   const disCountPresentage = 10;
   const disCountAmount = (subTotal * disCountPresentage) / 100;
   const totalDue = subTotal - disCountAmount;

@@ -29,221 +29,6 @@ class OrderController extends Controller
         ])->get());
     }
 
-    // Create new order
-    //public function store(Request $request)
-    // {
-    //     \Log::info("Incoming order request:",$request->all());
-    //     try{
-    //         $validated = $request->validate([
-    //             'shop_id' => 'required|exists:shops,id',
-    //             'total_price' => 'required|numeric',
-    //             'items'=>'required|array',
-    //             'items.*.item_id'=>'required|exists:items,id',
-    //             'items.*.quantity'=>'required|integer|min:1',
-    //             'items.*.item_expenses'=>'nullable|numeric|min:0',
-    //             'discount'=>'nullable|numeric|min:0',
-    //             'return_balance'=>'nullable|numeric|min:0',
-    //         ]);
-
-    //         return DB::transaction(function () use ($validated,$request){
-    //             $shop = Shop::findOrFail($validated['shop_id']);
-    //             $currentReturnBalance=$shop->return_balance;
-    //             $orderTotal=$validated['total_price'];
-    //             $discount = $validated['discount'] ?? 0;
-    //             $discountedTotal = $orderTotal-$discount;
-    //             $goodReturnValue = Returns::where('shop_id',$validated['shop_id'])->sum('return_cost');
-    //             $returnBalanceToUse = min($goodReturnValue,$orderTotal);    
-    //             $remainingReturnBalance = $validated['return_balance'];
-    //             $finalAmountToPay = max(0,$discountedTotal-$returnBalanceToUse);
-    //             $shop->update(['return_balance'=>$remainingReturnBalance]);
-
-    //             if($remainingReturnBalance> 0){
-    //                 Returns::where('shop_id',$validated['shop_id'])->decrement('return_cost',$remainingReturnBalance);
-    //             }
-                
-    //             $order = Order:: create([
-    //                 'total_price'=>$discountedTotal,
-    //                 'return_balance'=>$remainingReturnBalance,
-    //                 'shop_id'=>$validated['shop_id'],
-    //                 'user_name'=>$request->user_name,
-    //                 'status'=>"Pending",
-    //                 'discount'=>$discount,
-    //             ]);
-
-    //             $formattedItems=[];
-    //             foreach($validated['items'] as $item){
-    //                 $formattedItems[$item['item_id']]=['quantity'=>$item['quantity'],'item_expenses'=>$item['item_expenses'] ?? 0];
-    //             }
-    //             \Log::info('Attching items:',$formattedItems);
-    //             $order->items()->attach($formattedItems);
-
-    //             return response()->json([
-    //                 'message'=> 'Order created successfully',
-    //                 'order'=>$order->load(['items'=>function($query){
-    //                     $query->select('items.id','items.item','items.unitPrice','order_items.quantity','order_items.item_expenses');
-    //                 }]),
-    //             ],201);
-            
-    //         });
-
-    //         }catch(\Illuminate\Validation\ValidationException $e){
-    //             return response()->json(['error'=>$e->getMessage()],422);
-    //         }catch(\Exception $e){
-    //             \Log::error('Order creation failed:'. $e->getMessage());
-    //             return response()->json([
-    //                 'error'=>"Failed to create order",
-    //                 'message'=>$e->getMessage()
-    //             ],500);
-    //         }
-    // }
-    
-   // //worked well
-//     public function store(Request $request)
-// {
-//     \Log::info("Incoming order request:", $request->all());
-    
-//     try {
-//         $validated = $request->validate([
-//             'shop_id' => 'required|exists:shops,id',
-//             'total_price' => 'required|numeric',
-//             'items' => 'required|array',
-//             'items.*.item_id' => 'required|exists:items,id',
-//             'items.*.quantity' => 'required|integer|min:1',
-//             'items.*.item_expenses' => 'nullable|numeric|min:0',
-//             'discount' => 'nullable|numeric|min:0',
-//             'user_name' => 'required|string',
-//         ]);
-
-//         return DB::transaction(function () use ($validated) {
-//             $shop = Shop::findOrFail($validated['shop_id']);
-            
-//             $order = Order::create([
-//                 'total_price' => $validated['total_price'],
-//                 'return_balance' => 0, // Initialize to 0, adjust as needed
-//                 'shop_id' => $validated['shop_id'],
-//                 'user_name' => $validated['user_name'],
-//                 'status' => "Pending",
-//                 'discount' => $validated['discount'] ?? 0,
-//             ]);
-
-//             $formattedItems = [];
-//             foreach ($validated['items'] as $item) {
-//                 $formattedItems[$item['item_id']] = [
-//                     'quantity' => $item['quantity'],
-//                     'item_expenses' => $item['item_expenses'] ?? 0
-//                 ];
-//             }
-            
-//             $order->items()->attach($formattedItems);
-
-//             return response()->json([
-//                 'message' => 'Order created successfully',
-//                 'order' => $order->load(['items' => function($query) {
-//                     $query->select('items.id', 'items.item', 'items.unitPrice', 
-//                                  'order_items.quantity', 'order_items.item_expenses');
-//                 }]),
-//             ], 201);
-//         });
-
-//     } catch (\Illuminate\Validation\ValidationException $e) {
-//         return response()->json(['errors' => $e->errors()], 422);
-//     } catch (\Exception $e) {
-//         \Log::error('Order creation failed: '. $e->getMessage());
-//         return response()->json([
-//             'error' => "Failed to create order",
-//             'message' => $e->getMessage()
-//         ], 500);
-//     }
-// }
-
-//worked 2
-// public function store(Request $request)
-// {
-//     \Log::info("Incoming order request:", $request->all());
-    
-//     try {
-//         $validated = $request->validate([
-//             'shop_id' => 'required|exists:shops,id',
-//             'total_price' => 'required|numeric',
-//             'items' => 'required|array',
-//             'items.*.item_id' => 'required|exists:items,id',
-//             'items.*.quantity' => 'required|integer|min:1',
-//             'items.*.item_expenses' => 'nullable|numeric|min:0',
-//             'discount' => 'nullable|numeric|min:0',
-//             'user_name' => 'required|string',
-//             'return_balance_used' => 'nullable|numeric|min:0',
-//         ]);
-
-//         return DB::transaction(function () use ($validated) {
-//             $shop = Shop::findOrFail($validated['shop_id']);
-            
-//             // Process return balance if being used
-//             $remainingReturnBalance = $shop->return_balance;
-//             $returnBalanceUsed = $validated['return_balance_used'] ?? 0;
-            
-//             if ($returnBalanceUsed > 0) {
-//                 // Get returns ordered by oldest first
-//                 $returns = Returns::where('shop_id', $validated['shop_id'])
-//                     ->where('return_cost', '>', 0)
-//                     ->orderBy('created_at')
-//                     ->get();
-                
-//                 $balanceToConsume = $returnBalanceUsed;
-                
-//                 foreach ($returns as $return) {
-//                     if ($balanceToConsume <= 0) break;
-                    
-//                     $consumable = min($return->return_cost, $balanceToConsume);
-//                     $return->decrement('return_cost', $consumable);
-//                     $balanceToConsume -= $consumable;
-//                 }
-                
-//                 // Update shop's return balance
-//                 $remainingReturnBalance = $shop->return_balance - $returnBalanceUsed;
-//                 $shop->update(['return_balance' => $remainingReturnBalance]);
-//             }
-
-//             $order = Order::create([
-//                 'total_price' => $validated['total_price'],
-//                 'return_balance' => $returnBalanceUsed,
-//                 'shop_id' => $validated['shop_id'],
-//                 'user_name' => $validated['user_name'],
-//                 'status' => "Pending",
-//                 'discount' => $validated['discount'] ?? 0,
-//             ]);
-
-//             $formattedItems = [];
-//             foreach ($validated['items'] as $item) {
-//                 $formattedItems[$item['item_id']] = [
-//                     'quantity' => $item['quantity'],
-//                     'item_expenses' => $item['item_expenses'] ?? 0
-//                 ];
-//             }
-            
-//             $order->items()->attach($formattedItems);
-
-//             return response()->json([
-//                 'message' => 'Order created successfully',
-//                 'order' => $order->load(['items' => function($query) {
-//                     $query->select('items.id', 'items.item', 'items.unitPrice', 
-//                                  'order_items.quantity', 'order_items.item_expenses');
-//                 }]),
-//                 'return_balance_used' => $returnBalanceUsed,
-//                 'remaining_return_balance' => $remainingReturnBalance
-//             ], 201);
-//         });
-
-//     } catch (\Illuminate\Validation\ValidationException $e) {
-//         return response()->json(['errors' => $e->errors()], 422);
-//     } catch (\Exception $e) {
-//         \Log::error('Order creation failed: '. $e->getMessage());
-//         return response()->json([
-//             'error' => "Failed to create order",
-//             'message' => $e->getMessage()
-//         ], 500);
-//     }
-// }
-
 public function store(Request $request)
 {
     \Log::info("Incoming order request:", $request->all());
@@ -522,6 +307,23 @@ public function store(Request $request)
             'order'=>$order
         ]);
     }
+    public function getPendingOrders()
+        {
+            $pendingOrders = Order::where('status', 'pending')->get();
+
+            return response()->json($pendingOrders);
+        }
+
+        public function getOrderById($id)
+        {
+            $order = Order::find($id);
+            if (!$order) {
+                return response()->json(['error' => 'Order not found'], 404);
+            }
+
+            return response()->json($order);
+        }
+
 
     public function showOrderItems($id){
         $order = Order::with(['items'=>function ($query){

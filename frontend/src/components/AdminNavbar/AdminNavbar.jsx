@@ -38,7 +38,7 @@ const AdminNavbar = () => {
     <div className="AdminNavbar">
       <div className="AdminNavbarContainer">
         <span className="NavbarTitle">
-          {auth?.role === 'admin' ? 'ADMIN DASHBOARD' : 'SALES REP DASHBOARD'}
+          ADMIN DASHBOARD
         </span>
         <div className="NavbarLog" onClick={toggleLogoutPopup}>
           <span>{auth?.name || 'User'}</span>
