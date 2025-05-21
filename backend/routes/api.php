@@ -44,6 +44,7 @@ Route::apiResource('returns', ReturnController::class)->except(['index']);
 Route::get('/shops/{shop}/return-balance', [ShopController::class, 'getReturnBalance']);
 Route::put('/shops/{shop}/return-balance', [ShopController::class, 'updateReturnBalance']);
 Route::get('/shops/{shop}/return-balance', [ReturnController::class, 'getShopReturnBalance']);
+Route::apiResource('shops', ShopController::class);
 
 
 
@@ -55,7 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/cashflows', [CashflowController::class, 'store']);
     Route::get('/cashflows/{id}', [CashflowController::class, 'show']);
     Route::get('/me', [AuthController::class, 'me']);
-    Route::apiResource('shops', ShopController::class);
+    
     Route::get('/auth/verify', function () {
         return response()->json(['message' => 'Authenticated']);
     });
