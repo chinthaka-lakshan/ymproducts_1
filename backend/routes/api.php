@@ -12,6 +12,10 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReturnController;
 use App\Http\Controllers\CashflowController;
 
+
+ Route::get('/cashflows/daily-summary', [CashflowController::class, 'dailySummary']);
+Route::get('/cashflows/monthly-summary', [CashflowController::class, 'monthlySummary']);
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/send-otp', [AuthController::class, 'sendOtp']);
