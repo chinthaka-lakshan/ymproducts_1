@@ -1,71 +1,70 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./CashFlowWidget.css";
 import PaidIcon from '@mui/icons-material/Paid';
+import api from "../../api/axios"; // Axios instance with token support
 
 const CashFlowWidget = ({ type }) => {
+  const [amount, setAmount] = useState(0);
 
-  let data;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        let response;
 
-  switch (type) {
-    case "monthlyIncome":
-      data = {
-        title: "MONTHLY INCOME",
-        isMoney: false,
-        amount: 5000.00,
-      };
-      break;
+        // Determine if the type is daily or monthly and fetch accordingly
+        if (type.startsWith("monthly")) {
+          response = await api.get("/cashflows/monthly-summary");
+        } else if (type.startsWith("day")) {
+          response = await api.get("/cashflows/daily-summary");
+        }
 
-    case "monthlyExpense":
-      data = {
-        title: "MONTHLY EXPENSE",
-        isMoney: false,
-        amount: 5000.00,
-      };
-      break;
+        // Set amount based on type
+        switch (type) {
+          case "monthlyIncome":
+          case "dayIncome":
+            setAmount(response.data.income);
+            break;
 
-    case "monthlyProfit":
-      data = {
-        title: "MONTHLY PROFIT",
-        isMoney: false,
-        amount: 5000.00,
-      };
-        break;
+          case "monthlyExpense":
+          case "dayExpense":
+            setAmount(response.data.expenses);
+            break;
 
-    case "dayIncome":
-      data = {
-        title: "DAY INCOME",
-        isMoney: false,
-        amount: 5000.00,
-      };
-        break;
+          case "monthlyProfit":
+          case "dayProfit":
+            setAmount(response.data.profit);
+            break;
 
-    case "dayExpense":
-      data = {
-        title: "DAY EXPENSE",
-        isMoney: false,
-        amount: 5000.00,
-      };
-        break;
+          default:
+            setAmount(0);
+            break;
+        }
+      } catch (error) {
+        console.error("Error fetching cash flow data:", error);
+        setAmount(0); // Fallback to 0 in case of error
+      }
+    };
 
-    case "dayProfit":
-      data = {
-        title: "DAY PROFIT",
-        isMoney: false,
-        amount: 5000.00,
-      };
-        break;
+    fetchData();
+  }, [type]);
 
-    default:
-      break;
-  }
+  // Display title based on type
+  const titleMap = {
+    monthlyIncome: "MONTHLY INCOME",
+    monthlyExpense: "MONTHLY EXPENSE",
+    monthlyProfit: "MONTHLY PROFIT",
+    dayIncome: "DAY INCOME",
+    dayExpense: "DAY EXPENSE",
+    dayProfit: "DAY PROFIT",
+  };
 
   return (
     <div className='widget'>
       <div className='left'>
-        <span className='title'>{data.title}</span>
-        <span className='amount'>{data.amount}</span>
+        <span className='title'>{titleMap[type]}</span>
+        <span className='amount'>Rs. {amount.toFixed(2)}</span>
       </div>
-      <PaidIcon className='icon'/>
+      <PaidIcon className='icon' />
     </div>
   );
 };
