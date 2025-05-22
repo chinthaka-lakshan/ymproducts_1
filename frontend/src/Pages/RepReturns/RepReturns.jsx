@@ -4,10 +4,11 @@ import RepSideBar from '../../components/Sidebar/RepSidebar/RepSidebar';
 import RepNavbar from '../../components/RepNavbar/RepNavbar';
 import SearchIcon from '@mui/icons-material/Search';
 import { Switch, FormControlLabel } from '@mui/material';
-import api from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
+
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 const RepReturns = () => {
   const [goodReturns, setGoodReturns] = useState([]);
@@ -30,56 +31,60 @@ const RepReturns = () => {
     return shop ? shop.shop_name : 'Unknown Shop';
   };
 
-  // Fetch returns and shops from backend
-  // Fetch returns and shops from backend
-useEffect(() => {
-  const fetchData = async () => {
+  // Fetch data from API
+  const fetchData = async (url) => {
     try {
-      setLoading(true);
-      
-      // Fetch shops and returns in parallel
-      const [shopsResponse, goodRes, badRes] = await Promise.all([
-        api.get('/shops'),
-        api.get('/returns/good'),
-        api.get('/returns/bad')
-      ]);
-
-      // Create a shop map for quick lookup
-      const shopMap = {};
-      shopsResponse.data.forEach(shop => {
-        shopMap[shop.id] = shop.shop_name;
-      });
-
-      const processReturns = (returns) => {
-        return returns.data.data.map(rtn => {
-          const shopId = rtn.shop_id || rtn.shop?.id;
-          return {
-            ...rtn,
-            return_cost: Number(rtn.return_cost) || 0,
-            shop_name: shopMap[shopId] || 'Shop',
-            shop_id: shopId || null
-          };
-        });
-      };
-
-      setShops(shopsResponse.data);
-      setGoodReturns(processReturns(goodRes));
-      setBadReturns(processReturns(badRes));
-      setError(null);
-    } catch (err) {
-      console.error('API Error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Failed to load returns');
-      showAlert(
-        err.response?.data?.message || 'Server error occurred', 
-        'error'
-      );
-    } finally {
-      setLoading(false);
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data.data || data; // Handle both nested and flat responses
+    } catch (error) {
+      console.error('Fetch error:', error);
+      throw error;
     }
   };
 
-  fetchData();
-}, []);
+  // Fetch all required data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all data in parallel
+        const [shopsData, goodReturnsData, badReturnsData] = await Promise.all([
+          fetchData(`${API_BASE_URL}/shops`),
+          fetchData(`${API_BASE_URL}/returns/good`),
+          fetchData(`${API_BASE_URL}/returns/bad`)
+        ]);
+
+        setShops(Array.isArray(shopsData) ? shopsData : []);
+
+        const processReturns = (returns) => {
+          return (Array.isArray(returns) ? returns : []).map(rtn => ({
+            ...rtn,
+            return_cost: Number(rtn.return_cost) || 0,
+            shop_name: rtn.shop?.shop_name || getShopName(rtn.shop_id) || 'Shop',
+            shop_id: rtn.shop_id || (rtn.shop && rtn.shop.id) || null,
+            created_at: rtn.created_at || new Date().toISOString()
+          }));
+        };
+
+        setGoodReturns(processReturns(goodReturnsData));
+        setBadReturns(processReturns(badReturnsData));
+        setError(null);
+      } catch (err) {
+        console.error('Data loading error:', err);
+        setError(err.message || 'Failed to load data');
+        showAlert(err.message || 'Failed to load data', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   // Alert helpers
   const showAlert = (message, severity = 'success') => {
@@ -103,16 +108,16 @@ useEffect(() => {
   const returnsToFilter = showGoodReturns ? goodReturns : badReturns;
 
   // Search filtering for returns
-const filteredReturns = returnsToFilter.filter(rtn => {
-  const searchTerm = searchQuery.toLowerCase();
-  const shopName = rtn.shop_name.toLowerCase(); // Already processed in the data fetch
-  return (
-    shopName.includes(searchTerm) ||
-    rtn.created_at.toLowerCase().includes(searchTerm) ||
-    rtn.return_cost.toString().includes(searchTerm)
-  );
-});
-    
+  const filteredReturns = returnsToFilter.filter(rtn => {
+    const searchTerm = searchQuery.toLowerCase();
+    const shopName = (rtn.shop_name || '').toLowerCase();
+    const createdAt = (rtn.created_at || '').toLowerCase();
+    return (
+      shopName.includes(searchTerm) ||
+      createdAt.includes(searchTerm) ||
+      (rtn.return_cost.toString() || '').includes(searchTerm)
+    );
+  });
 
   // Sidebar logic
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -155,7 +160,6 @@ const filteredReturns = returnsToFilter.filter(rtn => {
     };
 
     handleResize();
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -163,7 +167,6 @@ const filteredReturns = returnsToFilter.filter(rtn => {
   const indexOfLastReturn = currentPage * returnsPerPage;
   const indexOfFirstReturn = indexOfLastReturn - returnsPerPage;
   const currentReturns = filteredReturns.slice(indexOfFirstReturn, indexOfLastReturn);
-
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const totalPages = Math.ceil(filteredReturns.length / returnsPerPage);
 
@@ -292,7 +295,6 @@ const filteredReturns = returnsToFilter.filter(rtn => {
         </div>
       </div>
 
-      {/* Alert Snackbar */}
       <Snackbar
         open={alert.open}
         autoHideDuration={6000}
