@@ -86,8 +86,10 @@ const Orders = () => {
           order.id === id ? { ...order, status: newStatus } : order
         ));
       } else if (newStatus === "Cancelled") {
-        await api.delete(`/orders/${id}`);
-        setOrders(orders.filter(order => order.id !== id));
+        await api.put(`/orders/${id}/status`, { status: newStatus });
+        setOrders(orders.map(order => 
+          order.id === id ? { ...order, status: newStatus } : order
+        ));
       }
     } catch (error) {
       console.error("Error updating order status", error);
