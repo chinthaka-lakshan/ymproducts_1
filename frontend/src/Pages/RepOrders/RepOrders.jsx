@@ -3,28 +3,26 @@ import './RepOrders.css';
 import RepSideBar from '../../components/Sidebar/RepSidebar/RepSidebar';
 import RepNavbar from '../../components/RepNavbar/RepNavbar';
 import SearchIcon from '@mui/icons-material/Search';
-import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Snackbar, Alert } from '@mui/material';
 
 const RepOrders = () => {
   const [orders, setOrders] = useState([]);
-  const [shops, setShops] = useState([]); // State for shops data
+  const [shops, setShops] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const [searchQuery, setSearchQuery] = useState('');
+
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 5;
-  const userToken = localStorage.getItem("admin_token");
-  const loggedUser = localStorage.getItem("username");
-  const [viewingOrder, setViewingOrder] = useState(null);
-  const navigate = useNavigate();
 
-  // Sidebar state
+  const [viewingOrder, setViewingOrder] = useState(null);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sidebarRef = useRef();
 
-  // Alert state
   const [alert, setAlert] = useState({
     open: false,
     message: '',
@@ -42,24 +40,28 @@ const RepOrders = () => {
     }
   };
 
-  // Fetch orders and shops when component mounts
+  // Fetch all orders
+  const fetchOrders = async () => {
+    try {
+      const response = await api.get("/orders");
+      setOrders(response.data); // Now includes all statuses
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setError("Failed to load orders");
+      showAlert("Failed to load orders", "error");
+    }
+  };
+
+  // Fetch data when component mounts
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         await fetchShops();
-        
-        const ordersResponse = await api.get("/orders");
-        const filteredOrders = ordersResponse.data.filter(
-          order => order.status === "Pending" || order.status === "PENDING"
-        );
-        
-        setOrders(filteredOrders);
-        setError(null);
+        await fetchOrders();
       } catch (error) {
         console.error("Error fetching data:", error);
-        setError("Failed to load data");
-        showAlert("Failed to load data", "error");
       } finally {
         setLoading(false);
       }
@@ -129,7 +131,8 @@ const RepOrders = () => {
     return (
       shopName.includes(searchTerm) ||
       order.user_name?.toLowerCase().includes(searchTerm) ||
-      order.total_price?.toString().includes(searchTerm)
+      order.total_price?.toString().includes(searchTerm) ||
+      order.status?.toLowerCase().includes(searchTerm)
     );
   });
 
@@ -208,7 +211,7 @@ const RepOrders = () => {
                       <th>Shop</th>
                       <th className="HideMobile">Rep Name</th>
                       <th className="HideTab">Total (LKR)</th>
-                      {/* <th>Status</th> */}
+                      <th className="HideTab">Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -223,6 +226,7 @@ const RepOrders = () => {
                             ? order.total_price.toFixed(2)
                             : (parseFloat(order.total_price) || 0).toFixed(2)}
                         </td>
+                        <td className="HideTab">{order.status}</td>
                         <td>
                           <button 
                             className="OrderTableViewButton"
@@ -237,8 +241,6 @@ const RepOrders = () => {
                 </table>
               )}
             </div>
-
-            
 
             {!loading && !error && filteredOrders.length > 0 && (
               <div className="pagination-container-rep">

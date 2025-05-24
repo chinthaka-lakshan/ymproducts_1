@@ -21,7 +21,6 @@ class OrderController extends Controller
 {
     public function index()
     {
-        //return response()->json(Order::all());
         return response()->json(Order::with([
             'items'=>function($query){
             $query->select('items.id','items.item','items.unitPrice','order_items.quantity');
@@ -131,6 +130,7 @@ class OrderController extends Controller
             ], 500);
         }
     }
+
     // Show single order
     public function show($id)
     {
@@ -294,23 +294,23 @@ class OrderController extends Controller
             'order'=>$order
         ]);
     }
+
     public function getPendingOrders()
-        {
-            $pendingOrders = Order::where('status', 'pending')->get();
+    {
+        $pendingOrders = Order::where('status', 'pending')->get();
 
-            return response()->json($pendingOrders);
+        return response()->json($pendingOrders);
+    }
+
+    public function getOrderById($id)
+    {
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['error' => 'Order not found'], 404);
         }
 
-        public function getOrderById($id)
-        {
-            $order = Order::find($id);
-            if (!$order) {
-                return response()->json(['error' => 'Order not found'], 404);
-            }
-
-            return response()->json($order);
-        }
-
+        return response()->json($order);
+    }
 
     public function showOrderItems($id){
         $order = Order::with(['items'=>function ($query){

@@ -36,10 +36,11 @@ const RepReturns = () => {
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      return data.data || data; // Handle both nested and flat responses
+      return data.success ? data.data : [];
     } catch (error) {
       console.error('Fetch error:', error);
       throw error;
@@ -65,7 +66,7 @@ const RepReturns = () => {
           return (Array.isArray(returns) ? returns : []).map(rtn => ({
             ...rtn,
             return_cost: Number(rtn.return_cost) || 0,
-            shop_name: rtn.shop?.shop_name || getShopName(rtn.shop_id) || 'Shop',
+            shop_name: rtn.shop?.shop_name || rtn.shop_name || 'Shop',
             shop_id: rtn.shop_id || (rtn.shop && rtn.shop.id) || null,
             created_at: rtn.created_at || new Date().toISOString()
           }));

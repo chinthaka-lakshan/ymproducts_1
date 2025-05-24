@@ -163,8 +163,25 @@ class ReturnController extends Controller
                         
             return response()->json([
                 'success' => true,
-                'message' => 'Return details retrieved successfully',
-                'data' => $return
+                'data' => [
+                    'id' => $return->id,
+                    'shop_id' => $return->shop_id,
+                    'shop_name' => $return->shop->shop_name,
+                    'created_at' => $return->created_at->toISOString(),
+                    'return_cost' => (float)$return->return_cost,
+                    'type' => $return->type,
+                    'rep_name' => $return->rep_name,
+                    'items' => $return->returnItems->map(function ($item) {
+                        return [
+                            'id' => $item->id,
+                            'item_id' => $item->item_id,
+                            'item_name' => $item->item->item_name,
+                            'quantity' => (int)$item->quantity,
+                            'unit_price' => (float)$item->unit_price,
+                            'total_price' => (float)($item->quantity * $item->unit_price)
+                        ];
+                    })
+                ]
             ]);
             
         } catch (\Exception $e) {
@@ -191,14 +208,20 @@ class ReturnController extends Controller
         try {
             $returns = Returns::with(['shop', 'returnItems.item'])
                 ->where('type', $type)
+                ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($return) {
                     return [
                         'id' => $return->id,
-                        'shop_name' => $return->shop->name ?? 'Unknown Shop',
-                        'created_at' => $return->created_at,
-                        'return_cost' => $return->return_cost,
-                        // Include other necessary fields
+                        'shop_id' => $return->shop_id,
+                        'shop' => [
+                            'id' => $return->shop->id,
+                            'shop_name' => $return->shop->shop_name
+                        ],
+                        'created_at' => $return->created_at->toISOString(),
+                        'return_cost' => (float)$return->return_cost,
+                        'type' => $return->type,
+                        'rep_name' => $return->rep_name,
                     ];
                 });
 
@@ -211,7 +234,8 @@ class ReturnController extends Controller
             \Log::error("Error fetching $type returns: " . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Server error'
+                'message' => 'Failed to fetch returns',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
