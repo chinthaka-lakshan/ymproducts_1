@@ -228,7 +228,6 @@ const RepDashboard = () => {
     }
   };
 
-  // In getReturnValue function:
   const getReturnValue = async (shopId) => {
     try {
       const response = await api.get(`/returns/${shopId}/balance`, {
