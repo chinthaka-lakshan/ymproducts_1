@@ -166,6 +166,11 @@
   }
 }
 
+.add-new-btn {
+  display: flex;
+  align-self: flex-end;
+}
+
 @media (max-width: 768px) {
   .RepReturnsContainer {
     margin-left: 60px !important;

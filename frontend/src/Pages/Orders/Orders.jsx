@@ -264,9 +264,8 @@ const Orders = () => {
         <div className="btn2">
           <button
             className="add-new-btn"
-            onClick={() => setShowShopsModal(true)}
-          >
-            Add New
+            onClick={() => navigate('/addOrder')}>
+              Add Order
           </button>
         </div>
 
