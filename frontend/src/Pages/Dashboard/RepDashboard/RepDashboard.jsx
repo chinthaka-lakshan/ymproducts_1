@@ -9,7 +9,7 @@ import BadReturnIcon from "../../../assets/BadReturn.png";
 import StoreFrontIcon from "@mui/icons-material/Store";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import SearchIcon from "@mui/icons-material/Search";
-import api from "../../../api/axios"; // Using the centralized axios instance
+import api from '../../../api/axios';
 import logo from "../../../assets/YM.png";
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -23,6 +23,7 @@ const RepDashboard = () => {
   const [isReturn, setIsReturn] = useState(false);
   const [isGood, setIsGood] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState(null);
+  const [editingOrderId, setEditingOrderId] = useState(null);
   const [totalOrderDiscount, setTotalOrderDiscount] = useState(0);
   const [returnBalance, setReturnBalance] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,27 +41,14 @@ const RepDashboard = () => {
   const sidebarRef = useRef();
   const invoiceRef = useRef();
 
-  const username = localStorage.getItem("username");
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [itemsError, setItemsError] = useState(null);
 
-  // Fetch data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [shopsResponse, itemsResponse] = await Promise.all([
-          api.get("/shops"),
-          api.get("/items"),
-        ]);
-        setShops(shopsResponse.data);
-        setItems(itemsResponse.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        alert("Failed to load data. Please refresh the page.");
-      }
-    };
-    fetchData();
-  }, []);
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
-  // Sidebar click outside handler
+  // Close sidebar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -71,12 +59,62 @@ const RepDashboard = () => {
         setSidebarOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Helper functions
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  //fetch shops
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        const token = localStorage.getItem('admin_token'); // or your token key
+        const response = await api.get("/shops", {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        setShops(response.data);
+      } catch (error) {
+        console.error("Error:", error.response?.data || error.message);
+      }
+    };
+    fetchShops();
+  }, []);
+
+  //fetch items
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        setIsLoadingItems(true);
+        setItemsError(null);
+        const response = await api.get("/items", {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+          }
+        });
+        setItems(response.data.map(item => ({
+          ...item,
+          // Ensure these fields exist
+          id: item.id || item._id,
+          item: item.item || item.name,
+          unitPrice: item.unitPrice || item.price,
+          quantity: item.quantity || item.stock
+        })));
+      } catch (error) {
+        setItemsError(error.response?.data?.message || "Failed to load items");
+        console.error("Items fetch error:", error);
+      } finally {
+        setIsLoadingItems(false);
+      }
+    };
+    
+    // Only fetch items if we have a selected shop and items modal is open
+    if (selectedShop && showItemsModal) {
+      fetchItems();
+    }
+  }, [selectedShop, showItemsModal]); // Add dependencies
 
   const handleAddOrderClick = () => {
     setIsReturn(false);
@@ -89,16 +127,26 @@ const RepDashboard = () => {
     setShowReturnModal(true);
   };
 
-  const handleReturnTypeSelect = (isGoodReturn) => {
+  const handleAddGoodReturnClick = () => {
     setShowReturnModal(false);
     setShowShopsModal(true);
-    setIsGood(isGoodReturn);
+    setIsGood(true);
   };
 
+  const handleAddBadReturnClick = () => {
+    setShowReturnModal(false);
+    setShowShopsModal(true);
+    setIsGood(false);
+  };
+
+  // Modify the handleShopSelect function to fetch return balance
   const handleShopSelect = async (shop) => {
+    console.log("Shop selected:", shop);
     setSelectedShop(shop);
     try {
-      const response = await api.get(`/shops/${shop.id}/return-balance`);
+      console.log("Fetching return balance for shop:", shop.id);
+      const response = await api.get(`/returns/${shop.id}/balance`); // Fixed: using shop.id
+      console.log("Return balance response:", response.data);
       setReturnBalance(response.data.return_balance || 0);
     } catch (error) {
       console.error("Error fetching return balance", error);
@@ -110,14 +158,9 @@ const RepDashboard = () => {
   };
 
   const handleItemSelect = (item) => {
-    setSelectedItems((prev) => [
-      ...prev,
-      {
-        item,
-        orderQty: 1,
-        unitPrice: item.unitPrice,
-        editedPrice: undefined,
-      },
+    setSelectedItems([
+      ...selectedItems,
+      { item: item, orderQty: 1, unitPrice: item.unitPrice },
     ]);
   };
 
@@ -136,15 +179,19 @@ const RepDashboard = () => {
     setSelectedShop(null);
     setShowItemsModal(false);
     setSearchItemTerm("");
+    setEditingOrderId(null);
+    setTotalOrderDiscount(0);
   };
 
   const handleConfirmOrder = () => {
-    setOrderToEdit({
+    const confirmedOrder = {
       shop: selectedShop,
       items: selectedItems,
-      isReturn,
-      isGood,
-    });
+      isReturn: isReturn,
+      isGood: isGood,
+    };
+
+    setOrderToEdit(confirmedOrder); // Show confirmed view
     setShowItemsModal(false);
     setSearchItemTerm("");
     setSelectedItems([]);
@@ -157,222 +204,201 @@ const RepDashboard = () => {
       setSelectedShop(orderToEdit.shop);
       setSelectedItems(orderToEdit.items);
       setIsReturn(orderToEdit.isReturn);
+      setEditingOrderId(orderToEdit.id || null); // Add this line
       setShowItemsModal(true);
       setOrderToEdit(null);
     }
   };
 
-  const calculateTotals = () => {
-    const itemDiscount = orderToEdit.items.reduce((sum, item) => {
-      const originalPrice = parseFloat(item.unitPrice);
-      const editedPrice =
-        item.editedPrice !== undefined
-          ? parseFloat(item.editedPrice)
-          : originalPrice;
-      return sum + (originalPrice - editedPrice) * item.orderQty;
-    }, 0);
+  const username = localStorage.getItem("username");
+  const userToken = localStorage.getItem("admin_token");
 
-    const orderDiscount = parseFloat(totalOrderDiscount) || 0;
-    const totalDiscount = itemDiscount + orderDiscount;
-    const subtotal = orderToEdit.items.reduce((sum, item) => {
-      const price =
-        item.editedPrice !== undefined
-          ? parseFloat(item.editedPrice)
-          : parseFloat(item.unitPrice);
-      return sum + price * item.orderQty;
-    }, 0);
+  const checkAdjustedOrderCost = async (shopId, orderAmount) => {
+    try {
+      if (shopId != null) {
+        const response = await api.get(
+          `/calculate-order-cost/${shopId}/${orderAmount}`,
+          { withCredentials: true }
+        );
+        return response.data.return_balance ?? orderAmount;
+      }
+    } catch (error) {
+      console.error("Error fetching order cost", error);
+      return orderAmount;
+    }
+  };
 
-    const grandTotal = subtotal - orderDiscount;
+  // In getReturnValue function:
+  const getReturnValue = async (shopId) => {
+    try {
+      const response = await api.get(`/returns/${shopId}/balance`, {
+        withCredentials: true,
+      });
+      return response.data.remaining_balance;
+    } catch (error) {
+      console.error(error);
+      return 0;
+    }
+  };
 
-    return {
-      itemDiscount,
-      orderDiscount,
-      totalDiscount,
-      subtotal,
-      grandTotal,
-    };
+  const updateReturnBalance = async (shopId, returnValue) => {
+    try {
+      const response = await api.put(
+        `/shops/${shopId}/return-balance`,
+        { return_balance: returnValue },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userToken}`,
+          },
+          withCredentials: true,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      alert(error);
+    }
   };
 
   const handleGenerateInvoice = async () => {
     try {
-      const { subtotal, totalDiscount, grandTotal } = calculateTotals();
-
-      // Prepare invoice data
-      const invoiceItems = orderToEdit.items.map(item => ({
-        id: item.item.id,
-        item: item.item.item,
-        quantity: item.orderQty,
-        unitPrice: item.editedPrice !== undefined ? 
-                  parseFloat(item.editedPrice) : 
-                  parseFloat(item.unitPrice),
-      }));
-
-      const invoiceSubtotal = invoiceItems.reduce(
-        (sum, item) => sum + (item.quantity * item.unitPrice),
+      // Calculate the total price from selected items
+      const subTotal = orderToEdit.items.reduce(
+        (sum, item) => sum + (item.editedPrice || item.unitPrice) * item.orderQty,
         0
       );
-      
-      const invoiceDiscount = totalDiscount;
-      const invoiceTotal = invoiceSubtotal - invoiceDiscount;
 
-      setInvoiceData({
-        items: invoiceItems,
-        subtotal: invoiceSubtotal,
-        discount: invoiceDiscount,
-        total: invoiceTotal,
+      // Calculate item discounts
+      const itemDiscount = orderToEdit.items.reduce((sum, item) => {
+        const originalPrice = parseFloat(item.unitPrice);
+        const editedPrice = item.editedPrice !== undefined && item.editedPrice !== "" 
+          ? parseFloat(item.editedPrice) 
+          : originalPrice;
+        return sum + (originalPrice - editedPrice) * item.orderQty;
+      }, 0);
+
+      // Calculate order discount
+      const orderDiscount = parseFloat(totalOrderDiscount) || 0;
+      const totalDiscount = itemDiscount + orderDiscount;
+
+      const currentReturnBalance = await getReturnValue(orderToEdit.shop.id);
+
+      // Calculate how much return balance we can use
+      // It cannot exceed either the available balance or the order amount after discounts
+      const amountAfterDiscounts = subTotal - orderDiscount;
+      const returnBalanceToUse = Math.min(
+        currentReturnBalance,
+        amountAfterDiscounts
+      );
+
+      // Calculate final amount to pay
+      const grandTotal = Math.max(0, amountAfterDiscounts - returnBalanceToUse);
+
+      const invoiceData = {
         shop: orderToEdit.shop,
-        isReturn: orderToEdit.isReturn,
         date: new Date().toLocaleDateString(),
-      });
+        isReturn: orderToEdit.isReturn,
+        items: orderToEdit.items.map(item => ({
+          item: item.item.item,
+          quantity: item.orderQty,
+          unitPrice: item.editedPrice || item.unitPrice
+        })),
+        subTotal: subTotal,
+        discount: orderDiscount,
+        returnBalanceUsed: returnBalanceToUse,
+        grandTotal: grandTotal
+      };
 
-      // Show the invoice popup
+      setInvoiceData(invoiceData);
       setShowPopup(true);
 
-      // Don't clear orderToEdit yet - we want to keep it for reference
+      if (orderToEdit.isReturn) {
+        // Handle return creation
+        const returnRecord = {
+          shop_id: orderToEdit.shop.id,
+          type: orderToEdit.isGood ? "good" : "bad",
+          return_cost: subTotal.toFixed(2),
+          rep_name: username,
+          items: orderToEdit.items.map((item) => ({
+            item_id: item.item.id,
+            quantity: item.orderQty,
+            unit_price: parseFloat(item.editedPrice || item.unitPrice).toFixed(2)
+          })),
+        };
+
+        console.log("Submitting return:", returnRecord);
+        const response = await api.post("/returns", returnRecord, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userToken}`,
+          },
+        });
+
+        if (response.data) {
+          alert("Return created successfully!");
+          setOrderToEdit(null);
+        }
+      } else {
+        // Handle order creation
+        const orderData = {
+          shop_id: orderToEdit.shop.id,
+          total_price: grandTotal.toFixed(2),
+          items: orderToEdit.items.map((item) => ({
+            item_id: item.item.id,
+            quantity: item.orderQty,
+            item_expenses: parseFloat(item.editedPrice || item.unitPrice).toFixed(2)
+          })),
+          user_name: username,
+          discount: totalDiscount.toFixed(2),
+          return_balance_used: returnBalanceToUse.toFixed(2) // This is crucial
+        };
+
+        console.log("Submitting order:", orderData); // Debug log
+        const response = await api.post("/orders", orderData, {
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${userToken}`
+          }
+        });
+
+        console.log("Order created:", response.data);
+        setOrderToEdit(null);
+        alert("Order created successfully!");
+      }
     } catch (error) {
-      console.error("Error generating invoice:", error);
-      alert("Failed to generate invoice. Please try again.");
+      console.error("Error creating order:", {
+        message: error.message,
+        response: error.response?.data,
+        stack: error.stack,
+      });
+
+      if (error.response?.status === 422) {
+        alert(`Validation errors:\n${JSON.stringify(error.response.data.errors, null, 2)}`);
+      } else if (error.response) {
+        alert(`Server error: ${error.response.data.message || error.response.statusText}`);
+      } else if (error.request) {
+        alert("Network error - no response received");
+      } else {
+        alert(`Error: ${error.message}`);
+      }
     }
   };
 
   const handlePrint = () => {
-    const input = invoiceRef.current;
-    html2canvas(input).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4'); // Fixed: using jsPDF instead of pdf
-      const imgWidth = 190;
-      const pageHeight = 290;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 10;
-
-      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      pdf.save('invoice.pdf');
-    });
+    if (invoiceRef.current) {
+      html2canvas(invoiceRef.current).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF();
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('invoice.pdf');
+      });
+    }
   };
-
-  const renderShopCards = () =>
-    shops
-      .filter((shop) =>
-        shop.shop_name.toLowerCase().includes(searchShopTerm.toLowerCase())
-      )
-      .sort((a, b) => a.shop_name.localeCompare(b.shop_name))
-      .map((shop) => (
-        <div
-          key={shop.id}
-          className="ShopCard"
-          onClick={() => handleShopSelect(shop)}
-        >
-          <h2 className="CardTitle">{shop.shop_name}</h2>
-          <div className="ShopCardMiddle">
-            <StoreFrontIcon className="ShopCardIcon" />
-            <div className="ShopCardDetails">
-              <span>{shop.location}</span>
-              <span>{shop.contact}</span>
-            </div>
-          </div>
-        </div>
-      ));
-
-  const renderItemCards = () =>
-    items
-      .filter((item) =>
-        item.item.toLowerCase().includes(searchItemTerm.toLowerCase())
-      )
-      .sort((a, b) => a.item.localeCompare(b.item))
-      .map((item) => {
-        const selected = selectedItems.find((i) => i.item.id === item.id);
-        return (
-          <div key={item.id} className="DistributionItemCard">
-            <h2 className="CardTitle">{item.item}</h2>
-            <div className="DistributionItemCardMiddle">
-              <ShoppingCartIcon className="DistributionItemCardIcon" />
-              <div className="DistributionItemCardDetails">
-                <span>
-                  <strong>Price (LKR): </strong>
-                  {item.unitPrice}
-                </span>
-                <span>
-                  <strong>In Stock: </strong>
-                  {item.quantity}
-                </span>
-                {selected ? (
-                  <div className="SelectedItemControl">
-                    <input
-                      type="number"
-                      min="1"
-                      value={selected.orderQty}
-                      onChange={(e) => {
-                        const qty = parseInt(e.target.value, 10);
-                        updateItemQuantity(
-                          item.id,
-                          isNaN(qty) ? "" : Math.max(1, qty)
-                        );
-                      }}
-                      className="QtyInput"
-                    />
-                    <button
-                      className="ClearQtyBtn"
-                      onClick={() => removeSelectedItem(item.id)}
-                    >
-                      ❌
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    className="SelectItemBtn"
-                    onClick={() => handleItemSelect(item)}
-                  >
-                    Select
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      });
-
-  const renderOrderItems = () =>
-    [...orderToEdit.items]
-      .sort((a, b) => a.item.item.localeCompare(b.item.item))
-      .map((item, index) => {
-        const unitPrice =
-          item.editedPrice !== undefined ? item.editedPrice : item.unitPrice;
-        return (
-          <tr key={index}>
-            <td>{item.item.item}</td>
-            <td>{item.orderQty}</td>
-            <td>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={unitPrice}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (/^\d*\.?\d{0,2}$/.test(value)) {
-                    setOrderToEdit((prev) => {
-                      const updatedItems = [...prev.items];
-                      updatedItems[index].editedPrice = value;
-                      return { ...prev, items: updatedItems };
-                    });
-                  }
-                }}
-                className="UnitPriceInput"
-              />
-            </td>
-            <td>{(item.orderQty * unitPrice).toFixed(2)}</td>
-          </tr>
-        );
-      });
 
   return (
     <div className="RepDashboard">
@@ -393,91 +419,30 @@ const RepDashboard = () => {
 
         {/* Return Type Modal */}
         {showReturnModal && (
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              background: "rgba(0, 0, 0, 0.5)",
-              zIindex: 1999,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: "white",
-                borderRadius: "10px",
-                padding: "20px",
-                width: "60%",
-                height: "80%",
-                boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
-                textAlign: "center",
-              }}
-            >
-              <h2 style={{ marginBottom: "20px", fontSize: "1.5rem" }}>
-                Select Return Type
-              </h2>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-around",
-                  marginBottom: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    padding: "10px",
-                    borderRadius: "8px",
-                    border: "1px solid #ccc",
-                    width: "300px",
-                  }}
-                  onClick={() => handleReturnTypeSelect(true)}
-                >
-                  <img
-                    src={GoodReturnIcon}
-                    alt="Good Return"
-                    style={{ width: "300px", height: "300px", marginBottom: "10px" }}
-                  />
-                  <p style={{ margin: 0, color: "GrayText", fontSize: "30px" }}>Good Return</p>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    padding: "10px",
-                    borderRadius: "8px",
-                    border: "1px solid #ccc",
-                    width: "300px",
-                  }}
-                  onClick={() => handleReturnTypeSelect(false)}
-                >
-                  <img
-                    src={BadReturnIcon}
-                    alt="Bad Return"
-                    style={{ width: "300px", height: "300px", marginBottom: "10px" }}
-                  />
-                  <p style={{ margin: 0, color: "GrayText", fontSize: "30px" }}>Bad Return</p>
+          <div className="ModalBackdrop">
+            <div className="Modal">
+              <h2 className="ModalTitle">Select Return Type</h2>
+              <div className="ScrollableContent">
+                <div className="ReturnButtonsContainer">
+                  <div
+                    className="ReturnButton"
+                    onClick={handleAddGoodReturnClick}
+                  >
+                    <img src={GoodReturnIcon} alt="Good Return" />
+                    <p>Good Return</p>
+                  </div>
+                  <div
+                    className="ReturnButton"
+                    onClick={handleAddBadReturnClick}
+                  >
+                    <img src={BadReturnIcon} alt="Bad Return" />
+                    <p>Bad Return</p>
+                  </div>
                 </div>
               </div>
-              <div>
+              <div className="ModalButtons">
                 <button
-                  style={{
-                    backgroundColor: "#ccc",
-                    padding: "10px 20px",
-                    border: "none",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                  }}
+                  className="CancelButton"
                   onClick={() => setShowReturnModal(false)}
                 >
                   Cancel
@@ -495,14 +460,40 @@ const RepDashboard = () => {
               <div className="SearchInputWrapper">
                 <input
                   type="text"
+                  className="SearchInput"
                   placeholder="Search Shops..."
                   value={searchShopTerm}
                   onChange={(e) => setSearchShopTerm(e.target.value)}
-                  className="SearchInput"
                 />
                 <SearchIcon className="SearchIcon" />
               </div>
-              <div className="ShopsGrid">{renderShopCards()}</div>
+              <div className="ScrollableContent">
+                <div className="ShopsGrid">
+                  {[...shops]
+                    .filter((shop) =>
+                      shop.shop_name
+                        .toLowerCase()
+                        .includes(searchShopTerm.toLowerCase())
+                    )
+                    .sort((a, b) => a.shop_name.localeCompare(b.shop_name))
+                    .map((shop, index) => (
+                      <div
+                        key={index}
+                        className="ShopCard"
+                        onClick={() => handleShopSelect(shop)}
+                      >
+                        <h2 className="CardTitle">{shop.shop_name}</h2>
+                        <div className="ShopCardMiddle">
+                          <StoreFrontIcon className="ShopCardIcon" />
+                          <div className="ShopCardDetails">
+                            <span>{shop.location}</span>
+                            <span>{shop.contact}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
               <div className="ModalButtons">
                 <button
                   className="CancelButton"
@@ -525,20 +516,77 @@ const RepDashboard = () => {
               <div className="SearchInputWrapper">
                 <input
                   type="text"
+                  className="SearchInput"
                   placeholder="Search Items..."
                   value={searchItemTerm}
                   onChange={(e) => setSearchItemTerm(e.target.value)}
-                  className="SearchInput"
                 />
                 <SearchIcon className="SearchIcon" />
               </div>
-              <div className="DistributionStockGrid">{renderItemCards()}</div>
+              <div className="ScrollableContent">
+                {items.length > 0 ? (
+                  <div className="DistributionStockGrid">
+                    {items
+                      .filter((item) =>
+                        item.item.toLowerCase().includes(searchItemTerm.toLowerCase())
+                      )
+                      .sort((a, b) => a.item.localeCompare(b.item))
+                      .map((item, index) => {
+                        const selected = selectedItems.find((i) => i.item.id === item.id);
+                        return (
+                          <div key={index} className="DistributionItemCard">
+                            <h2 className="CardTitle">{item.item}</h2>
+                            <div className="DistributionItemCardMiddle">
+                              <ShoppingCartIcon className="DistributionItemCardIcon" />
+                              <div className="DistributionItemCardDetails">
+                                <span><strong>Price (LKR): </strong>{item.unitPrice}</span>
+                                <span><strong>In Stock: </strong>{item.quantity}</span>
+                                {selected ? (
+                                  <div className="SelectedItemControl">
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      className="QtyInput"
+                                      value={selected.orderQty}
+                                      onChange={(e) => {
+                                        const qty = parseInt(e.target.value, 10);
+                                        updateItemQuantity(item.id, isNaN(qty) ? "" : qty);
+                                      }}
+                                    />
+                                    <button 
+                                      className="ClearQtyBtn"
+                                      onClick={() => removeSelectedItem(item.id)}
+                                    >
+                                      ❌
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    className="SelectItemBtn"
+                                    onClick={() => handleItemSelect(item)}
+                                  >
+                                    Select
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    }
+                  </div>
+                ) : (
+                  <div className="NoItemsMessage">
+                    {isLoadingItems ? 'Loading items...' : 'No items found'}
+                  </div>
+                )}
+              </div>
               <div className="ModalButtons">
                 <button className="CancelButton" onClick={handleCancelOrder}>
                   Cancel
                 </button>
                 <button className="ConfirmButton" onClick={handleConfirmOrder}>
-                  Confirm
+                  {editingOrderId ? "Update" : isReturn ? "Confirm" : "Confirm"}
                 </button>
               </div>
             </div>
@@ -554,27 +602,108 @@ const RepDashboard = () => {
               </h2>
               <h3 className="ModalSubTitle">
                 {orderToEdit.shop?.shop_name}
-                {orderToEdit.shop?.location &&
-                  ` - ${orderToEdit.shop.location}`}
+                {orderToEdit.shop.location
+                  ? ` - ${orderToEdit.shop.location}`
+                  : ""}
               </h3>
-              <div className="ConfirmedOrderTableContainer">
+              <div className="ScrollableContent">
                 <table className="ConfirmedOrderTable">
+                  <colgroup>
+                    <col style={{ width: "28%" }} />
+                    <col style={{ width: "22%" }} />
+                    <col style={{ width: "25%" }} />
+                    <col style={{ width: "25%" }} />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Item</th>
-                      <th>Quantity</th>
+                      <th className="QuantityHeader">Quantity</th>
                       <th>Unit Price (LKR)</th>
                       <th>Total (LKR)</th>
                     </tr>
                   </thead>
-                  <tbody>{renderOrderItems()}</tbody>
+                  <tbody>
+                    {[...orderToEdit.items]
+                      .sort((a, b) => a.item.item.localeCompare(b.item.item))
+                      .map((selectedItem, index) => (
+                        <tr key={index}>
+                          <td>{selectedItem.item.item}</td>
+                          <td>{selectedItem.orderQty}</td>
+                          <td>
+                            <input
+                              type="number"
+                              min="0"
+                              value={
+                                selectedItem.editedPrice !== undefined
+                                  ? selectedItem.editedPrice
+                                  : selectedItem.unitPrice
+                              } // Show editedPrice if available, else fallback to original unitPrice
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Allow empty input (clear the field)
+                                if (value === "") {
+                                  setOrderToEdit((prev) => {
+                                    const updatedItems = [...prev.items];
+                                    updatedItems[index].editedPrice = ""; // Set to empty if cleared
+                                    return { ...prev, items: updatedItems };
+                                  });
+                                  return;
+                                }
+                                // Validate and allow numbers with up to 2 decimals
+                                const regex = /^\d*\.?\d{0,2}$/;
+                                if (regex.test(value)) {
+                                  setOrderToEdit((prev) => {
+                                    const updatedItems = [...prev.items];
+                                    updatedItems[index].editedPrice = value;
+                                    return { ...prev, items: updatedItems };
+                                  });
+                                }
+                              }}
+                              onBlur={() => {
+                                setOrderToEdit((prev) => {
+                                  const updatedItems = [...prev.items];
+                                  const currentEdited =
+                                    updatedItems[index].editedPrice;
+                                  // If the field is empty, fallback to original price
+                                  if (
+                                    currentEdited === "" ||
+                                    currentEdited === undefined
+                                  ) {
+                                    updatedItems[index].editedPrice = undefined; // This will allow the input to fallback to unitPrice
+                                  } else {
+                                    const val = parseFloat(currentEdited);
+                                    updatedItems[index].editedPrice = isNaN(val)
+                                      ? ""
+                                      : val.toFixed(2); // Ensure two decimal points
+                                  }
+                                  return { ...prev, items: updatedItems };
+                                });
+                              }}
+                              className="UnitPriceInput"
+                            />
+                          </td>
+                          <td>
+                            {(() => {
+                              const unitPrice =
+                                selectedItem.editedPrice !== undefined &&
+                                selectedItem.editedPrice !== ""
+                                  ? parseFloat(selectedItem.editedPrice)
+                                  : parseFloat(selectedItem.unitPrice);
+                              return (
+                                selectedItem.orderQty * unitPrice
+                              ).toFixed(2);
+                            })()}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
                   <tfoot>
                     <tr>
                       <td>Total Items: {orderToEdit.items.length}</td>
                       <td>
                         Total Units:{" "}
                         {orderToEdit.items.reduce(
-                          (sum, item) => sum + Number(item.orderQty),
+                          (sum, item) => sum + Number(item.orderQty || 0),
                           0
                         )}
                       </td>
@@ -585,15 +714,14 @@ const RepDashboard = () => {
                         :{" "}
                         {orderToEdit.items
                           .reduce((sum, item) => {
-                            const originalPrice = parseFloat(item.unitPrice);
-                            const editedPrice =
-                              item.editedPrice !== undefined
-                                ? parseFloat(item.editedPrice)
-                                : originalPrice;
-                            return (
-                              sum +
-                              (originalPrice - editedPrice) * item.orderQty
-                            );
+                            const originalPrice = item.unitPrice; // The original price from the inventory
+                            const editedUnitPrice =
+                              item.editedPrice || originalPrice; // The price entered by the user
+                            const priceDifference =
+                              originalPrice - editedUnitPrice; // Difference between original and edited price
+                            const itemDifference =
+                              priceDifference * item.orderQty; // Difference for this item based on quantity
+                            return sum + itemDifference;
                           }, 0)
                           .toFixed(2)}
                       </td>
@@ -601,43 +729,94 @@ const RepDashboard = () => {
                         Sub Total:{" "}
                         {orderToEdit.items
                           .reduce((sum, item) => {
-                            const price =
-                              item.editedPrice !== undefined
+                            const unitPrice =
+                              item.editedPrice !== undefined &&
+                              item.editedPrice !== ""
                                 ? parseFloat(item.editedPrice)
                                 : parseFloat(item.unitPrice);
-                            return sum + item.orderQty * price;
+                            return sum + item.orderQty * unitPrice;
                           }, 0)
                           .toFixed(2)}
                       </td>
                     </tr>
-                    {!orderToEdit.isReturn && (
-                      <tr>
-                        <td colSpan="2">
+                    <tr>
+                      {orderToEdit.isReturn ? (
+                        <td colSpan="2"></td>
+                      ) : (
+                        <td>
                           <label>Order Discount:</label>
                           <input
-                            type="number"
-                            min="0"
-                            step="0.01"
+                            type="text"
+                            inputMode="decimal"
                             value={totalOrderDiscount}
                             onChange={(e) => {
                               const value = e.target.value;
-                              if (/^\d*\.?\d{0,2}$/.test(value)) {
+                              // Allow empty string to let user clear the input
+                              if (value === "") {
+                                setTotalOrderDiscount("");
+                                return;
+                              }
+                              // Regex to allow only numbers with up to 2 decimal places
+                              const regex = /^\d*\.?\d{0,2}$/;
+                              if (regex.test(value)) {
                                 setTotalOrderDiscount(value);
                               }
                             }}
+                            onBlur={() => {
+                              // Format to 2 decimal places on blur if value is valid
+                              if (totalOrderDiscount !== "") {
+                                const parsed = parseFloat(totalOrderDiscount);
+                                if (!isNaN(parsed)) {
+                                  setTotalOrderDiscount(parsed.toFixed(2));
+                                }
+                              }
+                            }}
+                            placeholder="0.00"
                             className="DiscountInput"
                           />
                         </td>
-                        <td>
-                          Total Discount:{" "}
-                          {calculateTotals().totalDiscount.toFixed(2)}
-                        </td>
-                        <td>
-                          <strong>Grand Total:</strong>{" "}
-                          {calculateTotals().grandTotal.toFixed(2)}
-                        </td>
-                      </tr>
-                    )}
+                      )}
+                      <td>
+                        <label>Total Discount: </label>
+                        {(() => {
+                          const itemDiscount = orderToEdit.items.reduce(
+                            (sum, item) => {
+                              const originalPrice = parseFloat(item.unitPrice);
+                              const editedPrice =
+                                item.editedPrice !== undefined &&
+                                item.editedPrice !== ""
+                                  ? parseFloat(item.editedPrice)
+                                  : originalPrice;
+                              return (
+                                sum +
+                                (originalPrice - editedPrice) * item.orderQty
+                              );
+                            },
+                            0
+                          );
+                          const orderDiscount = parseFloat(
+                            totalOrderDiscount || 0
+                          );
+                          return (itemDiscount + orderDiscount).toFixed(2);
+                        })()}
+                      </td>
+                      <td>
+                        <div>Return Balance: {returnBalance.toFixed(2)}</div>
+                      </td>
+                      <td>
+                        <strong>Grand Total:</strong>{" "}
+                        {(
+                          (orderToEdit?.items?.reduce((sum, item) => {
+                            const unitPrice =
+                              item.editedPrice !== undefined &&
+                              item.editedPrice !== ""
+                                ? parseFloat(item.editedPrice)
+                                : parseFloat(item.unitPrice);
+                            return sum + item.orderQty * unitPrice;
+                          }, 0) || 0) - (parseFloat(totalOrderDiscount) || 0)
+                        ).toFixed(2)}
+                      </td>
+                    </tr>
                   </tfoot>
                 </table>
               </div>
@@ -663,69 +842,75 @@ const RepDashboard = () => {
         )}
 
         {showPopup && invoiceData && (
-          <div className="ModalBackdrop">
-            <div className="Modal">
-              <div className="invoice-content" ref={invoiceRef}>
-                <div className="invoice-header">
-                  <img src={logo} alt="invoice-logo" className="invoice-logo" />
-                  <div>
-                    <h2>{invoiceData.shop.shop_name}</h2>
-                    <p>{invoiceData.date}</p>
-                  </div>
-                  <div className="invoice-number">
-                    <h2>{invoiceData.isReturn ? "Return Invoice" : "Order Invoice"}</h2>
-                    <p>#{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</p>
-                  </div>
+        <div className="ModalBackdrop">
+          <div className="Modal">
+            <div className="invoice-content" ref={invoiceRef}>
+              <div className="invoice-header">
+                <img src={logo} alt="invoice-logo" className="invoice-logo" />
+                <div>
+                  <h2>{invoiceData.shop.shop_name}</h2>
+                  <p>{invoiceData.date}</p>
+                  <p>{invoiceData.shop.location}</p>
                 </div>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Qty</th>
-                      <th>Unit Price</th>
-                      <th>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoiceData.items.map((item, index) => (
-                      <tr key={index}>
-                        <td>{item.item}</td>
-                        <td>{item.quantity}</td>
-                        <td>Rs. {item.unitPrice.toFixed(2)}</td>
-                        <td>Rs. {(item.quantity * item.unitPrice).toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="invoice-total">
-                  <p>Sub Total: Rs. {invoiceData.subtotal.toFixed(2)}</p>
-                  <p>Discount: Rs. {invoiceData.discount.toFixed(2)}</p>
-                  <p>
-                    <strong>Total: Rs. {invoiceData.total.toFixed(2)}</strong>
-                  </p>
+                <div className="invoice-number">
+                  <h2>{invoiceData.isReturn ? "Return Invoice" : "Order Invoice"}</h2>
+                  <p>#{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</p>
                 </div>
               </div>
-              <div className="InModalButtons">
-                <button 
-                  className="PrintButton" 
-                  onClick={handlePrint}
-                >
-                  Print Invoice
-                </button>
-                <button 
-                  className="close-btn" 
-                  onClick={() => {
-                    setShowPopup(false);
-                    setInvoiceData(null);
-                    setOrderToEdit(null); // Also clear the order
-                  }}
-                >
-                  Close
-                </button>
+              
+              <table className="invoice-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceData.items.map((item, index) => (
+                    <tr key={index}>
+                      <td>{item.item}</td>
+                      <td>{item.quantity}</td>
+                      <td>Rs. {Number(item.unitPrice).toFixed(2)}</td>
+                      <td>Rs. {(item.quantity * item.unitPrice).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              <div className="invoice-summary">
+                <div className="invoice-total">
+                  <p>Sub Total: Rs. {Number(invoiceData.subTotal).toFixed(2)}</p>
+                  {!invoiceData.isReturn && (
+                    <p>Discount: Rs. {Number(invoiceData.discount).toFixed(2)}</p>
+                  )}
+                  {!invoiceData.isReturn && (
+                    <p>Return Balance Applied: Rs. {Number(invoiceData.returnBalanceUsed).toFixed(2)}</p>
+                  )}
+                  {!invoiceData.isReturn && (
+                    <p className="grand-total">
+                      <strong>Grand Total: Rs. {Number(invoiceData.grandTotal).toFixed(2)}</strong>
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
+            
+            <div className="invoice-actions">
+              <button className="PrintButton" onClick={handlePrint}>
+                Print Invoice
+              </button>
+              <button className="close-btn" onClick={() => {
+                setShowPopup(false);
+                setInvoiceData(null);
+              }}>
+                Close
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
       </div>
     </div>
   );

@@ -510,7 +510,7 @@ th{
   color: #0b0b0b;
 }
 
-.InModalButtons {
+.invoice-actions {
   display: flex;
   justify-content: space-around;
   position: absolute;
