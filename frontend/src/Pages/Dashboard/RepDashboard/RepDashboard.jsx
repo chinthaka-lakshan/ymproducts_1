@@ -230,10 +230,10 @@ const RepDashboard = () => {
 
   const getReturnValue = async (shopId) => {
     try {
-      const response = await api.get(`/returns/${shopId}/balance`, {
+      const response = await api.get(`/shops/${shopId}`, {
         withCredentials: true,
       });
-      return response.data.remaining_balance;
+      return response.data.return_balance || 0; // Now using shop's balance
     } catch (error) {
       console.error(error);
       return 0;
@@ -362,6 +362,16 @@ const RepDashboard = () => {
         });
 
         console.log("Order created:", response.data);
+
+        // Refresh the return balance after successful order submission
+        try {
+          const balanceResponse = await api.get(`/returns/${orderToEdit.shop.id}/balance`);
+          setReturnBalance(balanceResponse.data.return_balance || 0);
+          console.log("Updated return balance:", balanceResponse.data.return_balance);
+        } catch (balanceError) {
+          console.error("Failed to refresh return balance:", balanceError);
+        }
+
         setOrderToEdit(null);
         alert("Order created successfully!");
       }

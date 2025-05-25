@@ -280,21 +280,6 @@ class ReturnController extends Controller
         }
     }
 
-    public function getShopReturns($shopId)
-    {
-        $retuns = Returns::with(['returnItems.item'])
-                ->where('shop_id',$shopId)
-                ->get();
-
-        $shop = Shop::findOrFail($shopId);
-
-        return response()->json([
-            'message'=> 'Shop returns retrieved succesfully',
-            'total_return_cost'=>$shop->return_balance,
-            'data'=>$returns
-        ]);
-    }
-
     public function getShopReturnBalance($shopId)
     {
         try {
