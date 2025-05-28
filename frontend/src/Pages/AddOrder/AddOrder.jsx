@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import StoreFrontIcon from "@mui/icons-material/Store";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import SearchIcon from "@mui/icons-material/Search";
-import '../Dashboard/RepDashboard/RepDashboard.css';
+import "./AddOrder.css";
 import api from "../../api/axios";
 import logo from "../../assets/YM.png";
 import html2canvas from 'html2canvas';
@@ -149,10 +149,10 @@ const AddOrder = () => {
 
   const getReturnValue = async (shopId) => {
     try {
-      const response = await api.get(`/returns/${shopId}/balance`, {
+      const response = await api.get(`/shops/${shopId}`, {
         withCredentials: true,
       });
-      return response.data.remaining_balance;
+      return response.data.return_balance || 0; // Now using shop's balance
     } catch (error) {
       console.error(error);
       return 0;
@@ -257,7 +257,7 @@ const AddOrder = () => {
   };
 
   return (
-    <div className="AddOrder">
+    <div className="AddOrderContainer">
       {/* Shops Modal */}
       {showShopsModal && (
         <div className="ModalBackdrop">
@@ -576,10 +576,7 @@ const AddOrder = () => {
                         return (itemDiscount + orderDiscount).toFixed(2);
                       })()}
                     </td>
-                    <td>
-                      <div>Return Balance: {returnBalance.toFixed(2)}</div>
-                    </td>
-                    <td>
+                    <td colSpan={2}>
                       <strong>Grand Total:</strong>{" "}
                       {(
                         (orderToEdit?.items?.reduce((sum, item) => {
@@ -599,7 +596,7 @@ const AddOrder = () => {
             <div className="ModalButtons">
               <button
                 className="CancelButton"
-                onClick={() => setOrderToEdit(null)}
+                onClick={() => {setOrderToEdit(null), navigate('/adminOrders')}}
               >
                 Cancel
               </button>

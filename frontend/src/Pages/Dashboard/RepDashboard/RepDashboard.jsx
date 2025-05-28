@@ -230,10 +230,10 @@ const RepDashboard = () => {
 
   const getReturnValue = async (shopId) => {
     try {
-      const response = await api.get(`/returns/${shopId}/balance`, {
+      const response = await api.get(`/shops/${shopId}`, {
         withCredentials: true,
       });
-      return response.data.remaining_balance;
+      return response.data.return_balance || 0; // Now using shop's balance
     } catch (error) {
       console.error(error);
       return 0;
@@ -362,6 +362,16 @@ const RepDashboard = () => {
         });
 
         console.log("Order created:", response.data);
+
+        // Refresh the return balance after successful order submission
+        try {
+          const balanceResponse = await api.get(`/returns/${orderToEdit.shop.id}/balance`);
+          setReturnBalance(balanceResponse.data.return_balance || 0);
+          console.log("Updated return balance:", balanceResponse.data.return_balance);
+        } catch (balanceError) {
+          console.error("Failed to refresh return balance:", balanceError);
+        }
+
         setOrderToEdit(null);
         alert("Order created successfully!");
       }
@@ -706,25 +716,24 @@ const RepDashboard = () => {
                           0
                         )}
                       </td>
-                      <td>
-                        {orderToEdit.isReturn
-                          ? "Return Difference"
-                          : "Item Discounts"}
-                        :{" "}
-                        {orderToEdit.items
-                          .reduce((sum, item) => {
-                            const originalPrice = item.unitPrice; // The original price from the inventory
-                            const editedUnitPrice =
-                              item.editedPrice || originalPrice; // The price entered by the user
-                            const priceDifference =
-                              originalPrice - editedUnitPrice; // Difference between original and edited price
-                            const itemDifference =
-                              priceDifference * item.orderQty; // Difference for this item based on quantity
-                            return sum + itemDifference;
-                          }, 0)
-                          .toFixed(2)}
-                      </td>
-                      <td>
+                      {!orderToEdit.isReturn && (
+                        <td>
+                          Item Discounts:{" "}
+                          {orderToEdit.items
+                            .reduce((sum, item) => {
+                              const originalPrice = item.unitPrice; // The original price from the inventory
+                              const editedUnitPrice =
+                                item.editedPrice || originalPrice; // The price entered by the user
+                              const priceDifference =
+                                originalPrice - editedUnitPrice; // Difference between original and edited price
+                              const itemDifference =
+                                priceDifference * item.orderQty; // Difference for this item based on quantity
+                              return sum + itemDifference;
+                            }, 0)
+                            .toFixed(2)}
+                        </td>
+                      )}
+                      <td colSpan={orderToEdit.isReturn ? 2 : 1}>
                         Sub Total:{" "}
                         {orderToEdit.items
                           .reduce((sum, item) => {
@@ -740,81 +749,79 @@ const RepDashboard = () => {
                     </tr>
                     <tr>
                       {orderToEdit.isReturn ? (
-                        <td colSpan="2"></td>
-                      ) : (
-                        <td>
-                          <label>Order Discount:</label>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            value={totalOrderDiscount}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              // Allow empty string to let user clear the input
-                              if (value === "") {
-                                setTotalOrderDiscount("");
-                                return;
-                              }
-                              // Regex to allow only numbers with up to 2 decimal places
-                              const regex = /^\d*\.?\d{0,2}$/;
-                              if (regex.test(value)) {
-                                setTotalOrderDiscount(value);
-                              }
-                            }}
-                            onBlur={() => {
-                              // Format to 2 decimal places on blur if value is valid
-                              if (totalOrderDiscount !== "") {
-                                const parsed = parseFloat(totalOrderDiscount);
-                                if (!isNaN(parsed)) {
-                                  setTotalOrderDiscount(parsed.toFixed(2));
-                                }
-                              }
-                            }}
-                            placeholder="0.00"
-                            className="DiscountInput"
-                          />
-                        </td>
-                      )}
-                      <td>
-                        <label>Total Discount: </label>
-                        {(() => {
-                          const itemDiscount = orderToEdit.items.reduce(
-                            (sum, item) => {
-                              const originalPrice = parseFloat(item.unitPrice);
-                              const editedPrice =
-                                item.editedPrice !== undefined &&
-                                item.editedPrice !== ""
-                                  ? parseFloat(item.editedPrice)
-                                  : originalPrice;
-                              return (
-                                sum +
-                                (originalPrice - editedPrice) * item.orderQty
-                              );
-                            },
-                            0
-                          );
-                          const orderDiscount = parseFloat(
-                            totalOrderDiscount || 0
-                          );
-                          return (itemDiscount + orderDiscount).toFixed(2);
-                        })()}
-                      </td>
-                      <td>
-                        <div>Return Balance: {returnBalance.toFixed(2)}</div>
-                      </td>
-                      <td>
-                        <strong>Grand Total:</strong>{" "}
-                        {(
-                          (orderToEdit?.items?.reduce((sum, item) => {
+                        <td colSpan="4">
+                          <strong>Grand Total:</strong>{" "}
+                          {orderToEdit?.items?.reduce((sum, item) => {
                             const unitPrice =
-                              item.editedPrice !== undefined &&
-                              item.editedPrice !== ""
+                              item.editedPrice !== undefined && item.editedPrice !== ""
                                 ? parseFloat(item.editedPrice)
                                 : parseFloat(item.unitPrice);
                             return sum + item.orderQty * unitPrice;
-                          }, 0) || 0) - (parseFloat(totalOrderDiscount) || 0)
-                        ).toFixed(2)}
-                      </td>
+                          }, 0).toFixed(2)}
+                        </td>
+                      ) : (
+                        <>
+                          <td>
+                            <label>Order Discount:</label>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={totalOrderDiscount}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === "") {
+                                  setTotalOrderDiscount("");
+                                  return;
+                                }
+                                const regex = /^\d*\.?\d{0,2}$/;
+                                if (regex.test(value)) {
+                                  setTotalOrderDiscount(value);
+                                }
+                              }}
+                              onBlur={() => {
+                                if (totalOrderDiscount !== "") {
+                                  const parsed = parseFloat(totalOrderDiscount);
+                                  if (!isNaN(parsed)) {
+                                    setTotalOrderDiscount(parsed.toFixed(2));
+                                  }
+                                }
+                              }}
+                              placeholder="0.00"
+                              className="DiscountInput"
+                            />
+                          </td>
+                          <td>
+                            <label>Total Discount: </label>
+                            {(() => {
+                              const itemDiscount = orderToEdit.items.reduce(
+                                (sum, item) => {
+                                  const originalPrice = parseFloat(item.unitPrice);
+                                  const editedPrice =
+                                    item.editedPrice !== undefined && item.editedPrice !== ""
+                                      ? parseFloat(item.editedPrice)
+                                      : originalPrice;
+                                  return sum + (originalPrice - editedPrice) * item.orderQty;
+                                },
+                                0
+                              );
+                              const orderDiscount = parseFloat(totalOrderDiscount || 0);
+                              return (itemDiscount + orderDiscount).toFixed(2);
+                            })()}
+                          </td>
+                          <td colSpan={2}>
+                            <strong>Grand Total:</strong>{" "}
+                            {(
+                              orderToEdit?.items?.reduce((sum, item) => {
+                                const unitPrice =
+                                  item.editedPrice !== undefined && item.editedPrice !== ""
+                                    ? parseFloat(item.editedPrice)
+                                    : parseFloat(item.unitPrice);
+                                return sum + item.orderQty * unitPrice;
+                              }, 0) - (parseFloat(totalOrderDiscount) || 0)
+                            ).toFixed(2)}
+                          </td>
+                        </>
+                      )}
                     </tr>
                   </tfoot>
                 </table>
