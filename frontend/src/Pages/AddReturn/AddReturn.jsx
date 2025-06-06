@@ -9,7 +9,7 @@ import BadReturnIcon from "../../assets/BadReturn.png";
 import logo from "../../assets/YM.png";
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import '../Dashboard/RepDashboard/RepDashboard.css';
+import "./AddReturn.css";
 
 const AddReturn = () => {
   const [shops, setShops] = useState([]);
@@ -226,7 +226,7 @@ const AddReturn = () => {
   };
 
   return (
-    <div className="AddReturn">
+    <div className="AddReturnContainer">
       {/* Return Type Modal */}
       {showReturnTypeModal && (
         <div className="ModalBackdrop">
@@ -506,19 +506,7 @@ const AddReturn = () => {
                         0
                       )}
                     </td>
-                    <td>
-                      Return Difference:{" "}
-                      {returnToEdit.items
-                        .reduce((sum, item) => {
-                          const originalPrice = item.unitPrice;
-                          const editedUnitPrice = item.editedPrice || originalPrice;
-                          const priceDifference = originalPrice - editedUnitPrice;
-                          const itemDifference = priceDifference * item.orderQty;
-                          return sum + itemDifference;
-                        }, 0)
-                        .toFixed(2)}
-                    </td>
-                    <td>
+                    <td colSpan={2}>
                       <strong>Total Return Value:</strong>{" "}
                       {returnToEdit.items
                         .reduce((sum, item) => {
@@ -538,7 +526,7 @@ const AddReturn = () => {
             <div className="ModalButtons">
               <button
                 className="CancelButton"
-                onClick={() => setReturnToEdit(null)}
+                onClick={() => {setReturnToEdit(null), navigate('/returns')}}
               >
                 Cancel
               </button>
@@ -597,17 +585,6 @@ const AddReturn = () => {
               <div className="invoice-summary">
                 <div className="invoice-total">
                   <p>Sub Total: Rs. {Number(invoiceData.subTotal).toFixed(2)}</p>
-                  {!invoiceData.isReturn && (
-                    <p>Discount: Rs. {Number(invoiceData.discount).toFixed(2)}</p>
-                  )}
-                  {!invoiceData.isReturn && (
-                    <p>Return Balance Applied: Rs. {Number(invoiceData.returnBalanceUsed).toFixed(2)}</p>
-                  )}
-                  {!invoiceData.isReturn && (
-                    <p className="grand-total">
-                      <strong>Grand Total: Rs. {Number(invoiceData.grandTotal).toFixed(2)}</strong>
-                    </p>
-                  )}
                 </div>
               </div>
             </div>

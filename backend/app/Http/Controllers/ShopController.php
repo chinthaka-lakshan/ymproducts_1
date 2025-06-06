@@ -124,6 +124,12 @@ class ShopController extends Controller
                 'shop_id'=>$shop->id,
                 'new_balance'=>$shop->return_balance
             ]
-        ],200);  
+        ],200);
+    }
+
+    public function show($id)
+    {
+        $shop = Shop::findOrFail($id);
+        return response()->json($shop);
     }
 }
